@@ -1,0 +1,37 @@
+# version control
+.svn
+.hg
+.bzr
+
+# editors
+\#*
+.#*
+\.#*
+*~
+*.tmproj
+*._flymake.*
+*.project
+
+# os x
+.DS_Store
+Icon?
+
+# backup
+.bak
+
+# tools
+TAGS*
+nohop.out
+a.out
+*.pyc
+*.so
+*.stackdump
+.yardoc
+
+# commonly ignored files
+/**/*DO_NOT_VERSION*
+/**/log/*
+/**/tmp/*
+/doc/*
+/pkg/*
+

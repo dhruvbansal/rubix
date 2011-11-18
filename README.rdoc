@@ -1,0 +1,151 @@
+= Rubix
+
+Rubix is a Ruby client for Zabbix[http://www.zabbix.com/].  It has a
+few goals:
+
+- Provide a +Connection+ and +Response+ class that abstract away the
+  complexity[http://www.zabbix.com/documentation/1.8/api/getting_started]
+  of authenticating with and sending API requests to Zabbix.
+
+- Provide an ORM for Zabbix resources like Hosts, HostGroups,
+  Templates, &c. using the {Zabbix
+  API}[http://www.zabbix.com/documentation/1.8/api].
+
+- Provide a command-line script that wraps the
+  {+zabbix_sender+}[http://www.zabbix.com/documentation/1.8/manpages/zabbix_sender]
+  utility, allowing it to consume JSON data and to 'auto-vivify'
+  hosts, hostgroups, applications, and items.
+
+- Provide some +Monitor+ classes that make it easy to write scripts
+  that periodically measure something and push it to Zabbix.
+
+- Have as few dependencies as possible: the core classes only depend
+  on Ruby 1.8 standard library & +JSON+ and scripts additionally
+  depend on +Configliere+[http://github.com/mrflip/configliere].
+  
+There are a lot of other projects out there that connect Ruby to
+Zabbix.  Here's a quick list:
+
+zabbix[http://github.com/lorieri/zabbix]::
+  zabbix aws templates, scripts, chef automations
+
+zabbixapi[http://github.com/verm666/zabbixapi]::
+  Ruby module for work with zabbix api
+  
+zabbix-rb[http://github.com/mhat/zabbix-rb]::
+  send data to zabbix from ruby
+  
+zabbix_pusher[http://github.com/iteh/zabbix_pusher]::
+  zabbix_pusher is a gem to parse zabbix templates and push the data
+  to the corresponding zabbix server
+
+zabbix-trappers[http://github.com/vzctl/zabbix-trappers]::
+  Collection of ruby scripts for zabbix trappers
+  
+rzabbix[http://github.com/neerfri/rzabbix]::
+  Zabbix API client for Ruby
+
+zabboard[http://github.com/yammer/zabboard]::
+  zabbix analytics
+  
+zabbix-web[http://github.com/legiar/zabbix-web]::
+  Zabbix frontend
+
+zabcon[http://trac.red-tux.net/]::
+  Zabcon is a command line interface for Zabbix written in Ruby
+
+None of these projects was satisfactory for our purposes so I decided
+to write Rubix.  The name is terrible but the code is better.  Enjoy!
+
+== Connections, Requests, & Responses
+
+Getting connected is easy
+
+  require 'rubix'
+
+  # Provide API URL & credentials.  These are the defaults.
+  Rubix.connect('http://localhost/api_jsonrpc.php', 'admin', 'zabbix')
+
+As per the {Zabbixi API
+documentation}[http://www.zabbix.com/documentation/1.8/api], each
+request to the Zabbix API needs four values:
+
++id+::
+  an integer identifying the request ID.
+
++auth+::
+  a string confirming that the API request is authenticated.
+
++method+::
+  the name of the API method you're calling, e.g. - <tt>host.get</tt>, <tt>template.delete</tt>, &c.
+
++params+::
+  parameters for the invocation of the +method+.
+
+When you send a request, Rubix only requires you to specify the
++method+ and the +params+, handling the +id+ and authentication
+quietly for you:
+
+  response = Rubix.connection.request('host.get', 'filter' => { 'host' => 'My Zabbix Host' })
+
+  # We can check for errors, whether they are non-200 responses or 200
+  responses with a Zabbix API error.
+  puts response.error_message unless response.success?
+
+  # See the result
+  puts response.result
+  #=> [{"hostid"=>"10017"}]
+
+=== On the command line
+
+Rubix comes with a command line utility +zabbix_api+ which lets you
+issue these sorts of requests directly on the command line.
+
+  $ zabbix_api host.get '{"filter": {"host": "My Zabbix Host"}}'
+  [{"hostid"=>"10017"}]
+
++zabbix_api+ lets you specify the credentials and will pretty-print
+responses for you.
+
+== ORM
+
+If you don't want to deal with the particulars of the Zabbix API
+itself, Rubix provides a set of classes that you can use instead.
+
+The following example goes through setting up an item on a host
+complete with host groups, templates, applications, and so on.
+
+  require 'zabbix'
+  Rubix.connect('http://localhost/api_jsonrpc.php', 'admin', 'zabbix')
+
+  # Ensure the host group we want exists.
+  host_group = Rubix::HostGroup.new(:name => "My Zabbix Hosts")
+  host_group.create unless host_group.exists?
+
+  # Now the template -- created templates are empty by default!
+  template = Rubix::Template.new(:name => "Template_Some_Service")
+  template.create unless template.exists?
+  
+  # Now the host.
+  host = Rubix::Host.new(:name => "My Host", :ip => '123.123.123.123', :templates => [template], :host_groups => [host_group])
+  # 'register' means the same as 'create unless exist' above...
+  host.register
+
+  # Now for the application
+  app = Rubix::Application.new(:name => 'Some App', :host => host)
+  app.register
+
+  # Now the item
+  item = Rubix::Item.new(:host => host, :key => 'foo.bar.baz', :description => "Some Item", :value_type => :unsigned_int, :applications => [app])
+  item.register
+
+You can also +update+, +destroy+ or +unregister+ ('destroy if exists')
+resources.  
+
+Only host groups, templates, hosts, applications, and items are
+available at present.  Other Zabbix resources (actions, alerts,
+events, maps, users, &c.) can be similarly wrapped, they just haven't
+been because we don't use them as much as we use these core resources.
+
+== Scripts
+
