@@ -20,7 +20,7 @@ Settings.define 'host',               :description => "Name of the (possibly new
 #
 # Configuration for talking with the Zabbix API
 #
-Settings.define 'api_server',         :description => "Hostname/IP of the Zabbix API server",                    :required => false
+Settings.define 'url',                :description => "URL of the Zabbix API",                                   :required => true, :default => 'localhost/api_jsonrpc.php'
 Settings.define 'username',           :description => "Username for the Zabbix API",                             :required => false, :env_var => "ZABBIX_API_USERNAME", :default => 'admin'
 Settings.define 'password',           :description => "Password for the Zabbix API",                             :required => false, :env_var => "ZABBIX_API_PASSWORD", :default => 'zabbix'
 Settings.define 'server_error_sleep', :description => "Seconds to sleep after a 50x error from the server",      :required => true, :type => Integer, :default => 1
@@ -54,7 +54,7 @@ if $0 == __FILE__
   end
 
   begin
-    Rubix.connect((Settings[:api_server] || File.join(Settings[:server], 'api_jsonrpc.php')), Settings[:username], Settings[:password])
+    Rubix.connect((Settings[:url] || File.join(Settings[:server], 'api_jsonrpc.php')), Settings[:username], Settings[:password])
     
   rescue Rubix::Error => e
     $stderr.puts e.message
