@@ -2,6 +2,10 @@ module Rubix
 
   class Host < Model
 
+    #
+    # == Properties & Finding ==
+    #
+    
     # The IP for a Host that not supposed to be polled by the Zabbix
     # server.
     BLANK_IP = '0.0.0.0'
@@ -9,11 +13,8 @@ module Rubix
     # The default port.
     DEFAULT_PORT = 10050
     
-    attr_accessor :name, :ip, :port, :profile, :status, :host_groups, :templates
-
-    #
-    # Initialization and properties.
-    #
+    attr_accessor :name, :ip, :port, :profile, :status
+    
     def initialize properties={}
       super(properties)
       @name        = properties[:name]
@@ -21,14 +22,60 @@ module Rubix
       @port        = properties[:port]
       @profile     = properties[:profile]
       @status      = properties[:status]
-      @host_groups = properties[:host_groups]
-      @templates   = properties[:templates]
+
+      self.host_group_ids = properties[:host_group_ids]
+      self.host_groups    = properties[:host_groups]
+
+      self.template_ids   = properties[:template_ids]
+      self.templates      = properties[:templates]
+
+      self.user_macro_ids = properties[:user_macro_ids]
+      self.user_macros    = properties[:user_macros]
     end
 
+    def self.find_request options={}
+      request('host.get', 'filter' => {'host' => options[:name], 'hostid' => options[:id]}, 'select_groups' => 'refer', 'selectParentTemplates' => 'refer', 'select_profile' => 'refer', 'output' => 'extend')
+    end
+
+    def self.build host
+      new({
+            :id             => host['hostid'].to_i,
+            :name           => host['host'],
+            :host_group_ids => host['groups'].map { |group| group['groupid'].to_i },
+            :template_ids   => host['parentTemplates'].map { |template| (template['templateid'] || template['hostid']).to_i },
+            :profile        => host['profile'],
+            :port           => host['port']
+          })
+    end
+    
     def log_name
       "HOST #{name || id}"
     end
+
+    def self.id_field
+      'hostid'
+    end
+
+    #
+    # == Associations == 
+    #
+
+    include Associations::HasManyHostGroups
+    include Associations::HasManyTemplates
+    include Associations::HasManyUserMacros
+
+    #
+    # == Validation == 
+    #
+
+    def validate
+      raise ValidationError.new("A host must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
+    end
     
+    #
+    # == CRUD ==
+    #
+
     def params
       {}.tap do |hp|
         hp['host']    = name
@@ -47,81 +94,30 @@ module Rubix
       end
     end
     
-    #
-    # Actions
-    #
-
-    def validate
-      raise ValidationError.new("A host must have at least one host group.") if host_groups.nil? || host_groups.empty?
+    def create_request
+      request('host.create', params.merge('groups' => host_group_params, 'templates' => template_params, 'macros' => user_macro_params))
     end
 
-    def load
-      response = request('host.get', 'filter' => {'host' => name}, 'select_groups' => 'refer', 'selectParentTemplates' => 'refer', 'select_profile' => 'refer', 'output' => 'extend')
-      case
-      when response.has_data?
-        host          = response.result.first
-        @id           = host['hostid'].to_i
-        @host_groups  = host['groups'].map { |group| HostGroup.new(:id => group['groupid'].to_i) }
-        @templates    = host['parentTemplates'].map { |template| Template.new((template['templateid'] || template['hostid']).to_i) }
-        @profile      = host['profile']
-        @port         = host['port']
-        @exists       = true
-        @loaded       = true
-      when response.success?
-        @exists = false
-        @loaded = true
+    def update_request
+      request('host.update', params.merge('hostid' => id))
+    end
+
+    def destroy_request
+      request('host.delete', [{'hostid' => id}])
+    end
+    
+    def mass_update_templates_and_host_groups_and_macros
+      host_group_ids = (host_groups || []).map { |g| { 'groupid'    => g.id                             } }
+      template_ids   = (templates || []).map   { |t| { 'templateid' => t.id                             } }
+      macro_ids      = (marcos || []).map      { |m| { 'macro'      => m.macro_name, 'value' => m.value } }
+      
+      response = request('host.massUpdate', { 'groups' => host_group_ids, 'templates' => template_ids, 'macros' => macro_ids})
+      if response.has_data?
+        info("Updated templates, host groups, & macros")
       else
-        error("Could not load: #{response.error_message}")
+        error("Could not update all templates, host groups, and/or macros: #{response.error_message}")
       end
     end
     
-    def create
-      validate
-
-      host_group_ids = (host_groups || []).map { |g| { 'groupid'    => g.id } }
-      template_ids   = (templates || []).map   { |t| { 'templateid' => t.id } }
-      response = request('host.create', params.merge('groups' => host_group_ids, 'templates' => template_ids))
-      
-      if response.has_data?
-        @exists  = true
-        @id      = response.result['hostids'].first.to_i
-        info("Created")
-      else
-        error("Could not create: #{response.error_message}.")
-      end
-    end
-
-    def update
-      validate
-      response = request('host.update', params.merge('hostid' => id))
-      if response.has_data?
-        info("Updated")
-      else
-        error("Could not update: #{response.error_message}.")
-      end
-      mass_update_templates_and_host_groups
-    end
-
-    def mass_update_templates_and_host_groups
-      response = request('host.massUpdate', { 'groupids' => (host_groups || []).map(&:id), 'templateids' => (templates || []).map(&:id) })
-      if response.has_data?
-        info("Updated templates and host groups")
-      else
-        error("Could not update all templates and/or host groups: #{response.error_message}")
-      end
-    end
-
-    def destroy
-      response = request('host.delete', [{'hostid' => id}])
-      case
-      when response.has_data? && response.result['hostids'].first.to_i == id
-        info("Deleted")
-      when response.error_message =~ /does not exist/i
-        # was never there...
-      else
-        error("Could not delete: #{response.error_message}")
-      end
-    end
-
   end
 end

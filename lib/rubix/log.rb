@@ -12,29 +12,42 @@ module Rubix
   end
 
   def self.default_logger
-    severity = Logger::INFO
-    file     = $stdout
-    
-    if defined?(Settings) && Settings[:log_level]
-      begin
-        severity_name = Settings[:log_level].to_s.upcase
-        severity      = Logger.const_get(severity_name)
-      rescue NameError => e
-      end
-    end
-
-    if defined?(Settings) && Settings[:log]
-      begin
-        file = Settings[:log]
-      rescue NameError => e
-      end
-    end
-    
-    @logger       = Logger.new(file)
-    @logger.level = severity
+    @logger       = Logger.new(default_log_path)
+    @logger.level = default_log_severity
+    p default_log_severity
     @logger
   end
 
+  def self.default_log_severity
+    case
+    when defined?(Settings) && Settings[:log_level]
+      Logger.const_get(Settings[:log_level].to_s.strip)
+    when ENV["RUBIX_LOG_LEVEL"]
+      severity_name = ENV["RUBIX_LOG_LEVEL"].to_s.strip
+    else
+      severity_name = 'info'
+    end
+    
+    begin
+      return Logger.const_get(severity_name.upcase)
+    rescue NameError => e
+      return Logger::INFO
+    end
+  end
+
+  def self.default_log_path
+    case
+    when defined?(Settings) && Settings[:log]
+      Settings[:log]
+    when ENV["RUBIX_LOG_PATH"] == '-'
+      $stdout
+    when ENV["RUBIX_LOG_PATH"]
+      ENV["RUBIX_LOG_PATH"]
+    else
+      $stdout
+    end
+  end
+      
   module Logs
 
     def log_name

@@ -2,79 +2,79 @@ module Rubix
   
   class Template < Model
 
-    attr_accessor :name, :host_ids
+    #
+    # == Properties & Finding ==
+    #
 
+    attr_accessor :name
+    
     def initialize properties={}
       super(properties)
-      @name = properties[:name]
+      @name     = properties[:name]
+      
+      self.host_ids = properties[:host_ids]
+      self.hosts    = properties[:hosts]
+
+      self.host_group_ids = properties[:host_group_ids]
+      self.host_groups    = properties[:host_groups]
+    end
+
+    def self.find_request options={}
+      params = {'select_hosts' => 'refer', 'output' => 'extend'}
+      case
+      when options[:id]
+        params['templateids'] = [options[:id]]
+      when options[:name]
+        params['filter'] = { 'host' => options[:name] }
+      end
+      request('template.get', params)
+    end
+
+    def self.build template
+      new({
+            :id       => (template['templateid'] || template['hostid']).to_i,
+            :name     => template['host'],
+            :host_ids => template['hosts'].map { |host_info| host_info['hostid'].to_i }
+          })
     end
 
     def log_name
       "TEMPLATE #{name || id}"
     end
 
-    def register
-      exists? ? update : create
+    def self.id_field
+      'templateid'
     end
 
-    def unregister
-      destroy if exists?
+    #
+    # == Validation ==
+    #
+
+    def validate
+      raise ValidationError.new("A template must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
     end
     
-    def load
-      response = request('template.get', 'filter' => {'templateid' => id, 'name' => name}, 'select_hosts' => 'refer', 'output' => 'extend')
-      case
-      when response.has_data?
-        @id       = response.first['templateid'].to_i
-        @name     = response.first['name']
-        @host_ids = response.first['hosts'].map { |host_info| host_info['hostid'].to_i }
-        @loaded   = true
-        @exists   = true
-      when response.success?
-        @exists = false
-        @loaded = true
-      else
-        error("Could not load: #{response.error_messaage}")
-      end
+    #
+    # == Associations ==
+    #
+
+    include Associations::HasManyHosts
+    include Associations::HasManyHostGroups
+
+    #
+    # == CRUD ==
+    #
+    
+    def create_request
+      request('template.create', {'host' => name, 'groups' => host_group_params})
+    end
+    
+    def update_request
+      request('template.update', [{'host' => name, 'templateid' => id, 'groups' => host_group_params}])
     end
 
-    def create
-      response = request('template.create', [{'name' => name}])
-      if response.has_data?
-        @id     = response['templateids'].first.to_i
-        @exists = true
-        info("Created")
-      else
-        error("Could not create: #{response.error_message}.")
-      end
-    end
-
-    def update
-      # noop
-      info("Updated")
-    end
-
-    def destroy
-      response = request('template.delete', [{'templateid' => id}])
-      case
-      when response.has_data? && response['templateids'].first.to_i == id
-        info("Deleted")
-      when response.zabbix_error? && response.error_message =~ /does not exist/i
-        # was never there...
-      else
-        error("Could not delete: #{response.error_message}")
-      end
-    end
-
-    def contains? host
-      return unless exists?
-      host_ids.include?(host.id)
-    end
-
-    def self.find_or_create_by_name name
-      new(:name => name).tap do |group|
-        group.create unless group.exists?
-      end
+    def destroy_request
+      request('template.delete', [{'templateid' => id}])
     end
     
   end

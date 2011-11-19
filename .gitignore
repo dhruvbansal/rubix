@@ -36,3 +36,5 @@ a.out
 /pkg/*
 
 *.gem
+
+spec/test.yml

@@ -2,6 +2,10 @@ module Rubix
   
   class Item < Model
 
+    #
+    # == Properties & Finding ==
+    #
+
     # The numeric code for a Zabbix item of type 'Zabbix trapper'.  The
     # item must have this type in order for the Zabbix server to listen
     # and accept data submitted by +zabbix_sender+.
@@ -25,81 +29,6 @@ module Rubix
       3 => :unsigned_int,       # Numeric (unsigned)
       4 => :text                # Text
     }.freeze
-    
-    attr_accessor :host, :applications, :key, :description, :value_type
-
-    def initialize properties={}
-      super(properties)
-      @host         = properties[:host]
-      @key          = properties[:key]
-      @description  = properties[:description]
-      @value_type   = properties[:value_type]
-      @applications = properties[:applications]
-    end
-
-    def log_name
-      "ITEM #{key}@#{host.name}"
-    end
-
-    def params
-      {
-        :hostid       => host.id,
-        :description  => (description || 'Unknown'),
-        :type         => self.class::TRAPPER_TYPE,
-        :key_         => key,
-        :value_type   => self.class::VALUE_CODES[value_type],
-      }.tap do |p|
-        p[:applications] = applications.map(&:id) if applications
-      end
-    end
-
-    def load
-      response = request('item.get', 'host' => host.name, 'filter' => {'key_' => key, 'id' => id}, "output" => "extend")
-      case
-      when response.has_data?
-        item = response.first
-        @id          = item['itemid'].to_i
-        @host        = Host.new(:id => item['hostid'])
-        @description = item['description']
-        @value_type  = self.class::VALUE_NAMES[item['value_type']] # it's actually a 'code' that's returned...
-        @key         = item['key_']
-        @exists      = true
-        @loaded      = true
-      when response.success?
-        @exists = false
-        @loaded = true
-      else
-        error("Could not load: #{response.error_message}")
-      end
-    end
-
-    def create
-      response = request('item.create', params)
-      if response.has_data?
-        @id     = response['itemids'].first.to_i
-        @exists = true
-        info("Created")
-      else
-        error("Could not create: #{response.error_message}.")
-      end
-    end
-
-    def update
-      # noop
-      info("Updated")
-    end
-
-    def destroy
-      response = request('item.delete', [id])
-      case
-      when response.has_data? && response['itemids'].first.to_i == id
-        info("Deleted")
-      when response.zabbix_error? && response.error_message =~ /does not exist/i
-        # was never there...
-      else
-        error("Could not delete: #{response.error_message}.")
-      end
-    end
 
     # Return the +value_type+ name (:float, :text, &c.) for a Zabbix
     # item's value type by examining the given +value+.
@@ -116,6 +45,78 @@ module Rubix
     # type by examining the given +value+.
     def self.value_code_from_value value
       self::VALUE_CODES[value_type_from_value(value)]
+    end
+    
+    attr_accessor :key, :description, :value_type
+
+    def initialize properties={}
+      super(properties)
+      @key          = properties[:key]
+      @description  = properties[:description]
+      @value_type   = properties[:value_type]
+      @applications = properties[:applications]
+
+      self.host            = properties[:host]
+      self.host_id         = properties[:host_id]
+      self.applications    = properties[:applications]
+      self.application_ids = properties[:application_ids]
+    end
+
+    def self.find_request options={}
+      request('item.get', 'hostids' => [options[:host_id]], 'filter' => {'key_' => options[:key], 'id' => options[:id]}, "output" => "extend")
+    end
+
+    def self.build item
+      new({
+            :id          => item['itemid'].to_i,
+            :host        => Host.new(:id => item['hostid']),
+            :description => item['description'],
+            :value_type  => self::VALUE_NAMES[item['value_type']], # it's actually a 'code' that's returned...
+            :key         => item['key_']
+          })
+    end
+    
+    def log_name
+      "ITEM #{key}@#{host.name}"
+    end
+
+    def self.id_field
+      'itemid'
+    end
+
+    #
+    # == Associations ==
+    #
+
+    include Associations::BelongsToHost
+    include Associations::HasManyApplications
+
+    #
+    # == CRUD == 
+    #
+    
+    def params
+      {
+        :hostid       => host_id,
+        :description  => (description || 'Unknown'),
+        :type         => self.class::TRAPPER_TYPE,
+        :key_         => key,
+        :value_type   => self.class::VALUE_CODES[value_type],
+      }.tap do |p|
+        p[:applications] = application_ids if application_ids
+      end
+    end
+    
+    def create_request
+      request('item.create', params)
+    end
+
+    def update_request
+      request('item.update', params.merge('itemid' => id))
+    end
+
+    def destroy_request
+      request('item.delete', [id])
     end
     
   end

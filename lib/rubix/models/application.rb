@@ -2,74 +2,68 @@ module Rubix
   
   class Application < Model
 
-    attr_accessor :name, :host
+    #
+    # == Properties & Finding ==
+    #
 
     def initialize properties={}
       super(properties)
-      @name = properties[:name]
-      @host = properties[:host]
+      @name    = properties[:name]
+      
+      self.host_id = properties[:host_id]
+      self.host    = properties[:host]
+    end
+    
+    attr_accessor :name
+
+    def self.find_request options={}
+      request('application.get', 'hostids' => [options[:host_id]], 'filter' => {'name' => options[:name], 'id' => options[:id]}, "output" => "extend")
     end
 
-    def params
-      {
-        :name   => name,
-        :hostid => host.id
+    def self.build app
+      params = {
+        :id   => app['applicationid'].to_i,
+        :name => app['name']
       }
-    end
 
+      # use the host id if available, else use the template id
+      if app['hosts'] && app['hosts'].first && app['hosts'].first['hostid']
+        params[:host_id] = app['hosts'].first['hostid'].to_i
+      else
+        params[:host_id] = app['templateid']
+      end
+      new(params)
+    end
+    
     def log_name
       "APP #{name || id}@#{host.name}"
     end
 
-    def load
-      response = request('application.get', 'hostids' => [host.id], 'filter' => {'name' => name, 'id' => id}, "output" => "extend")
-      case
-      when response.has_data?
-        app = response.first
-        @id          = app['applicationid'].to_i
-        @name        = app['name']
-        @exists      = true
-        @loaded      = true
-      when response.success?
-        @exists = false
-        @loaded = true
-      else
-        error("Could not load: #{response.error_message}")
-      end
+    def self.id_field
+      'applicationid'
+    end
+    
+    
+    #
+    # == Associations ==
+    #
+
+    include Associations::BelongsToHost
+    
+    #
+    # == CRUD ==
+    #
+    
+    def create_request
+      request('application.create', 'name' => name, 'hostid' => host_id)
     end
 
-    def create
-      response = request('application.create', params)
-      if response.has_data?
-        @id     = response['applicationids'].first.to_i
-        @exists = true
-        info("Created")
-      else
-        error("Could not create: #{response.error_message}")
-      end
+    def update_request
+      request('application.update', 'applicationid' => id, 'name' => name)
     end
 
-    def update
-      # noop
-      info("Updated")
-    end
-
-    def destroy
-      response = request('application.delete', [id])
-      case
-      when response.has_data? && response['applicationids'].first.to_i == id
-        info("Deleted")
-      when response.zabbix_error? && response.error_message =~ /does not exist/i
-        # was never there...
-      else
-        error("Could not delete: #{response.error_message}.")
-      end
-    end
-
-    def self.find_or_create_by_name_and_host name, host
-      new(:name => name, :host => host).tap do |app|
-        app.create unless app.exists?
-      end
+    def destroy_request
+      request('application.delete', [id])
     end
     
   end
