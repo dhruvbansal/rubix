@@ -10,7 +10,7 @@ module Rubix
 
     def initialize properties={}
       super(properties)
-      @name  = properties[:name]
+      @name  = properties[:name] || self.class.unmacro_name(properties[:macro])
       @value = properties[:value]
 
       self.host    = properties[:host]
@@ -24,7 +24,7 @@ module Rubix
     def self.build macro
       new({
             :id      => macro['hostmacroid'].to_i,
-            :name    => macro['macro'].gsub(/^\{\$/, '').gsub(/\}$/, '').upcase,
+            :name    => unmacro_name(macro['macro']),
             :value   => macro['value'],
             :host_id => macro['hostid']
           })
@@ -32,6 +32,10 @@ module Rubix
     
     def log_name
       "MACRO #{macro_name}@#{host.name}"
+    end
+
+    def self.unmacro_name name
+      (name || '').gsub(/^\{\$/, '').gsub(/\}$/, '').upcase
     end
 
     def self.macro_name name

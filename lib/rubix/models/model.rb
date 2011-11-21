@@ -71,6 +71,10 @@ module Rubix
       else
         error("Could not update: #{response.error_message}")
       end
+      after_update
+    end
+
+    def after_update
     end
 
     def save

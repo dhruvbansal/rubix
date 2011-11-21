@@ -17,7 +17,7 @@ module Rubix
     attr_accessor :name
 
     def self.find_request options={}
-      request('application.get', 'hostids' => [options[:host_id]], 'filter' => {'name' => options[:name], 'id' => options[:id]}, "output" => "extend")
+      request('application.get', 'hostids' => [options[:host_id]], 'filter' => {'name' => options[:name], 'applicationid' => options[:id]}, "output" => "extend")
     end
 
     def self.build app
@@ -59,7 +59,7 @@ module Rubix
     end
 
     def update_request
-      request('application.update', 'applicationid' => id, 'name' => name)
+      request('application.update', 'applicationid' => id, 'name' => name, 'hosts' => {'hostid' => host_id})
     end
 
     def destroy_request

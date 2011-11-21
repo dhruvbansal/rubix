@@ -47,14 +47,15 @@ module Rubix
       self::VALUE_CODES[value_type_from_value(value)]
     end
     
-    attr_accessor :key, :description, :value_type
-
+    attr_accessor :key, :description
+    attr_reader :value_type
+    
     def initialize properties={}
       super(properties)
-      @key          = properties[:key]
-      @description  = properties[:description]
-      @value_type   = properties[:value_type]
-      @applications = properties[:applications]
+      @key            = properties[:key]
+      @description    = properties[:description]
+      
+      self.value_type = properties[:value_type]
 
       self.host            = properties[:host]
       self.host_id         = properties[:host_id]
@@ -63,16 +64,17 @@ module Rubix
     end
 
     def self.find_request options={}
-      request('item.get', 'hostids' => [options[:host_id]], 'filter' => {'key_' => options[:key], 'id' => options[:id]}, "output" => "extend")
+      request('item.get', 'hostids' => [options[:host_id]], 'filter' => {'key_' => options[:key], 'id' => options[:id]}, "select_applications" => "refer", "output" => "extend")
     end
 
     def self.build item
       new({
-            :id          => item['itemid'].to_i,
-            :host        => Host.new(:id => item['hostid']),
-            :description => item['description'],
-            :value_type  => self::VALUE_NAMES[item['value_type']], # it's actually a 'code' that's returned...
-            :key         => item['key_']
+            :id              => item['itemid'].to_i,
+            :host_id         => item['hostid'].to_i,
+            :description     => item['description'],
+            :value_type      => item['value_type'] ? self::VALUE_NAMES[item['value_type'].to_i] : :character,
+            :application_ids => (item['applications'] || []).map { |app| app['applicationid'].to_i },
+            :key             => item['key_']
           })
     end
     
@@ -82,6 +84,14 @@ module Rubix
 
     def self.id_field
       'itemid'
+    end
+
+    def value_type= vt
+      if vt.nil? || vt.to_s.empty? || !self.class::VALUE_CODES.include?(vt.to_sym)
+        @value_type = :character
+      else
+        @value_type = vt.to_sym
+      end
     end
 
     #

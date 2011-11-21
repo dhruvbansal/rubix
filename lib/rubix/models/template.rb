@@ -20,7 +20,7 @@ module Rubix
     end
 
     def self.find_request options={}
-      params = {'select_hosts' => 'refer', 'output' => 'extend'}
+      params = {'select_groups' => 'refer', 'select_hosts' => 'refer', 'output' => 'extend'}
       case
       when options[:id]
         params['templateids'] = [options[:id]]
@@ -34,7 +34,8 @@ module Rubix
       new({
             :id       => (template['templateid'] || template['hostid']).to_i,
             :name     => template['host'],
-            :host_ids => template['hosts'].map { |host_info| host_info['hostid'].to_i }
+            :host_ids => template['hosts'].map { |host_info| host_info['hostid'].to_i },
+            :host_group_ids => template['groups'].map { |group| group['groupid'].to_i }
           })
     end
 

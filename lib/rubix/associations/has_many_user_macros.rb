@@ -26,8 +26,8 @@ module Rubix
       end
 
       def user_macro_params
-        return [] unless user_macro_ids
-        user_macro_ids.map { |umid| { 'usermacroid' => umid } }
+        return [] unless user_macros
+        user_macros.map { |um| { 'macro' => um.macro_name, 'value' => um.value } }
       end
       
     end

@@ -34,7 +34,7 @@ module Rubix
     end
 
     def self.find_request options={}
-      request('host.get', 'filter' => {'host' => options[:name], 'hostid' => options[:id]}, 'select_groups' => 'refer', 'selectParentTemplates' => 'refer', 'select_profile' => 'refer', 'output' => 'extend')
+      request('host.get', 'filter' => {'host' => options[:name], 'hostid' => options[:id]}, 'select_groups' => 'refer', 'selectParentTemplates' => 'refer', 'select_profile' => 'refer', 'select_macros' => 'extend', 'output' => 'extend')
     end
 
     def self.build host
@@ -43,6 +43,7 @@ module Rubix
             :name           => host['host'],
             :host_group_ids => host['groups'].map { |group| group['groupid'].to_i },
             :template_ids   => host['parentTemplates'].map { |template| (template['templateid'] || template['hostid']).to_i },
+            :user_macros    => host['macros'].map { |um| UserMacro.new(:host_id => um['hostid'].to_i, :id => um['hostmacroid'], :value => um['value'], :macro => um['macro']) },
             :profile        => host['profile'],
             :port           => host['port']
           })
@@ -102,21 +103,17 @@ module Rubix
       request('host.update', params.merge('hostid' => id))
     end
 
-    def destroy_request
-      request('host.delete', [{'hostid' => id}])
-    end
-    
-    def mass_update_templates_and_host_groups_and_macros
-      host_group_ids = (host_groups || []).map { |g| { 'groupid'    => g.id                             } }
-      template_ids   = (templates || []).map   { |t| { 'templateid' => t.id                             } }
-      macro_ids      = (marcos || []).map      { |m| { 'macro'      => m.macro_name, 'value' => m.value } }
-      
-      response = request('host.massUpdate', { 'groups' => host_group_ids, 'templates' => template_ids, 'macros' => macro_ids})
+    def after_update
+      response = request('host.massUpdate', { 'groups' => host_group_params, 'templates' => template_params, 'macros' => user_macro_params, 'hosts' => [{'hostid' => id}]})
       if response.has_data?
         info("Updated templates, host groups, & macros")
       else
         error("Could not update all templates, host groups, and/or macros: #{response.error_message}")
       end
+    end
+    
+    def destroy_request
+      request('host.delete', [{'hostid' => id}])
     end
     
   end
