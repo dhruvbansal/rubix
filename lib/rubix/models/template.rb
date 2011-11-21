@@ -53,6 +53,7 @@ module Rubix
 
     def validate
       raise ValidationError.new("A template must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
+      true
     end
     
     #

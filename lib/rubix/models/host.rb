@@ -71,6 +71,7 @@ module Rubix
 
     def validate
       raise ValidationError.new("A host must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
+      true
     end
     
     #
@@ -107,8 +108,10 @@ module Rubix
       response = request('host.massUpdate', { 'groups' => host_group_params, 'templates' => template_params, 'macros' => user_macro_params, 'hosts' => [{'hostid' => id}]})
       if response.has_data?
         info("Updated templates, host groups, & macros")
+        true
       else
         error("Could not update all templates, host groups, and/or macros: #{response.error_message}")
+        false
       end
     end
     

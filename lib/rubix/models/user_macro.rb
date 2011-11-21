@@ -61,6 +61,7 @@ module Rubix
     #
     def validate
       raise ValidationError.new("A user macro must have both a 'name' and a 'value'") if name.nil? || name.strip.empty? || value.nil? || value.strip.empty?
+      true
     end
     
     #
