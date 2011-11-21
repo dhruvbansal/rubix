@@ -88,14 +88,21 @@ quietly for you:
 
   response = Rubix.connection.request('host.get', 'filter' => { 'host' => 'My Zabbix Host' })
 
-  # We can check for errors, whether they are non-200 responses or 200
-  responses with a Zabbix API error.
-  puts response.error_message unless response.success?
-
-  # See the result
-  puts response.result
-  #=> [{"hostid"=>"10017"}]
-
+  case
+  when response.has_data?
+    # Response is a success and "has data" -- it's not empty.  This
+    # means we found our host.
+    puts response.result
+    #=> [{"hostid"=>"10017"}]
+  when response.success?
+    # Response was succssful but doesn't "have data" -- it's empty, no
+    # such host!
+    puts "No such host"
+  else
+    # Response was an error.  Uh oh!
+    puts response.error_message
+  end
+  
 === On the command line
 
 Rubix comes with a command line utility +zabbix_api+ which lets you
@@ -105,7 +112,7 @@ issue these sorts of requests directly on the command line.
   [{"hostid"=>"10017"}]
 
 +zabbix_api+ lets you specify the credentials and will pretty-print
-responses for you.
+responses for you.  Try <tt>zabbix_api --help</tt> for more details.
 
 == ORM
 
@@ -119,33 +126,31 @@ complete with host groups, templates, applications, and so on.
   Rubix.connect('http://localhost/api_jsonrpc.php', 'admin', 'zabbix')
 
   # Ensure the host group we want exists.
-  host_group = Rubix::HostGroup.new(:name => "My Zabbix Hosts")
-  host_group.create unless host_group.exists?
+  host_group = Rubix::HostGroup.find_or_create(:name => "My Zabbix Hosts")
 
   # Now the template -- created templates are empty by default!
   template = Rubix::Template.new(:name => "Template_Some_Service")
-  template.create unless template.exists?
+  template.save
   
   # Now the host.
   host = Rubix::Host.new(:name => "My Host", :ip => '123.123.123.123', :templates => [template], :host_groups => [host_group])
-  # 'register' means the same as 'create unless exist' above...
-  host.register
+  host.save
 
   # Now for the application
   app = Rubix::Application.new(:name => 'Some App', :host => host)
-  app.register
+  app.save
 
   # Now the item
   item = Rubix::Item.new(:host => host, :key => 'foo.bar.baz', :description => "Some Item", :value_type => :unsigned_int, :applications => [app])
-  item.register
+  item.save
 
-You can also +update+, +destroy+ or +unregister+ ('destroy if exists')
-resources.  
+You can also +update+ and +destroy+ resources.
 
-Only host groups, templates, hosts, applications, and items are
-available at present.  Other Zabbix resources (actions, alerts,
-events, maps, users, &c.) can be similarly wrapped, they just haven't
-been because we don't use them as much as we use these core resources.
+Only host groups, templates, hosts, applications, user macros, and
+items are available at present.  Other Zabbix resources (actions,
+alerts, events, maps, users, &c.) can be similarly wrapped, they just
+haven't been yet because we don't use them as much as we use these
+core resources.
 
 == Sender
 
@@ -165,9 +170,9 @@ data one line at a time from any of these sources and uses the
 
 Here's an example of starting +zabbix_pipe+ and sending some data onto
 Zabbix.  (Credentials and addresses for the Zabbix server and the
-Zabbix API can all be customized; try the <tt>--help</tt> option.)
+Zabbix API can all be customized; see the <tt>--help</tt> option.)
 
-  # Send one data point
+  # Send one data point -- this is tab separated!
   $ echo "foo.bar.baz	123" | zabbix_pipe --host='My Zabbix Host'
   # Send a bunch of data points in a file
   $ cat my_data.tsv | zabbix_pipe --host='My Zabbix Host'
@@ -254,9 +259,11 @@ itself.
 
 A good pattern is to set up a production pipe (in <tt>--fast</tt>)
 mode at <tt>/dev/zabbix</tt> and to do all development/deployment with
-a separate copy of +zabbix_pipe+.  Once development/deployment is
+a separate instance of +zabbix_pipe+.  Once development/deployment is
 complete and all hosts, groups, templates, applications, and items
-have been created, switch to using production mode.
+have been created, switch to writing all data in "production mode"
+using the <tt>--fast</tt> pipe at <tt>/dev/zabbix</tt>.
 
 == Monitors
 
+FIXME Rubix has some pre-built monitors...
