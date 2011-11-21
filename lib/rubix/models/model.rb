@@ -75,7 +75,7 @@ module Rubix
       response = create_request
       if response.has_data?
         @id = response.result[self.class.id_field + 's'].first.to_i
-        info("Created")
+        info("Created #{resource_name}")
       else
         error("Error creating #{resource_name}: #{response.error_message}")
         return false
@@ -88,7 +88,7 @@ module Rubix
       return false unless before_update
       response = update_request
       if response.has_data?
-        info("Updated")
+        info("Updated #{resource_name}")
       else
         error("Error updating #{resource_name}: #{response.error_message}")
         return false
