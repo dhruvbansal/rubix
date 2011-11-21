@@ -28,15 +28,10 @@ module Rubix
           })
     end
     
-    def log_name
-      "GROUP #{name || id}"
-    end
-
     def self.id_field
       'groupid'
     end
     
-
     #
     # == Associations ==
     #

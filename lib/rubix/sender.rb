@@ -29,15 +29,14 @@ module Rubix
       @settings = settings
       confirm_settings
       self.host = Host.new(:name => settings['host'])
-      @log_name = "PIPE #{host.name}"
       if settings['fast']
-        info("Forwarding...") if settings['verbose']
+        info("Forwarding for #{self.host.name}...") if settings['verbose']
       else
         initialize_hostgroups
         initialize_templates
         initialize_host
         initialize_applications
-        info("Forwarding...") if settings['verbose'] && host.exists?
+        info("Forwarding for #{self.host.name}...") if settings['verbose'] && host.exists?
       end
     end
 

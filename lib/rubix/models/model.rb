@@ -9,18 +9,17 @@ module Rubix
     extend Logs
     include Logs
 
-    def self.model_name
+    def self.resource_name
       self.to_s.split('::').last
     end
 
-    def self.log_name
-      model_name
+    def resource_name
+      "#{self.class.resource_name} #{respond_to?(:name) ? self.name : self.id}"
     end
 
     def initialize properties={}
       @properties = properties
       @id         = properties[:id]
-      @log_name   = self.class.model_name
     end
     
     def new_record?
@@ -43,7 +42,7 @@ module Rubix
       when response.success?
         # a successful but empty response means it wasn't found
       else
-        error("Could not find #{options.inspect}: #{response.error_message}")
+        error("Error finding #{resource_name} using #{options.inspect}: #{response.error_message}")
         nil
       end
     end
@@ -62,7 +61,7 @@ module Rubix
           false
         end
       else
-        error("Could not create #{options.inspect}: #{response.error_message}")
+        error("Error creating #{resource_name} using #{options.inspect}: #{response.error_message}")
         false
       end
     end
@@ -77,31 +76,29 @@ module Rubix
       if response.has_data?
         @id = response.result[self.class.id_field + 's'].first.to_i
         info("Created")
-        true
       else
-        error("Could not create: #{response.error_message}")
-        false
+        error("Error creating #{resource_name}: #{response.error_message}")
+        return false
       end
     end
 
     def update
       return false unless validate
       return create if new_record?
+      return false unless before_update
       response = update_request
       if response.has_data?
         info("Updated")
-        after_update
       else
-        error("Could not update: #{response.error_message}")
-        false
+        error("Error updating #{resource_name}: #{response.error_message}")
+        return false
       end
-      after_update
     end
 
-    def after_update
+    def before_update
       true
     end
-
+    
     def save
       new_record? ? create : update
     end
@@ -111,13 +108,13 @@ module Rubix
       response = destroy_request
       case
       when response.has_data? && response.result.values.first.first.to_i == id
-        info("Destroyed")
+        info("Destroyed #{resource_name}")
         true
       when response.zabbix_error? && response.error_message =~ /does not exist/i
         # was never there
         true
       else
-        error("Could not destroy: #{response.error_message}")
+        error("Could not destroy #{resource_name}: #{response.error_message}")
         false
       end
     end

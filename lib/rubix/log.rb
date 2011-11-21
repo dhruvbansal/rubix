@@ -14,7 +14,6 @@ module Rubix
   def self.default_logger
     @logger       = Logger.new(default_log_path)
     @logger.level = default_log_severity
-    p default_log_severity
     @logger
   end
 
@@ -50,33 +49,29 @@ module Rubix
       
   module Logs
 
-    def log_name
-      @log_name
-    end
-    
     def debug *args
       return unless Rubix.logger
-      Rubix.logger.log(Logger::DEBUG, args.join(' '), log_name)
+      Rubix.logger.log(Logger::DEBUG, args.join(' '))
     end
 
     def info *args
       return unless Rubix.logger
-      Rubix.logger.log(Logger::INFO, args.join(' '), log_name)
+      Rubix.logger.log(Logger::INFO, args.join(' '))
     end
 
     def warn *args
       return unless Rubix.logger
-      Rubix.logger.log(Logger::WARN, args.join(' '), log_name)
+      Rubix.logger.log(Logger::WARN, args.join(' '))
     end
 
     def error *args
       return unless Rubix.logger
-      Rubix.logger.log(Logger::ERROR, args.join(' '), log_name)
+      Rubix.logger.log(Logger::ERROR, args.join(' '))
     end
 
     def fatal *args
       return unless Rubix.logger
-      Rubix.logger.log(Logger::FATAL, args.join(' '), log_name)
+      Rubix.logger.log(Logger::FATAL, args.join(' '))
     end
     
   end

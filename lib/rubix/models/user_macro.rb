@@ -30,10 +30,6 @@ module Rubix
           })
     end
     
-    def log_name
-      "MACRO #{macro_name}@#{host.name}"
-    end
-
     def self.unmacro_name name
       (name || '').gsub(/^\{\$/, '').gsub(/\}$/, '').upcase
     end

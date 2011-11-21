@@ -78,10 +78,6 @@ module Rubix
           })
     end
     
-    def log_name
-      "ITEM #{key}@#{host.name}"
-    end
-
     def self.id_field
       'itemid'
     end

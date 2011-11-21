@@ -39,10 +39,6 @@ module Rubix
           })
     end
 
-    def log_name
-      "TEMPLATE #{name || id}"
-    end
-
     def self.id_field
       'templateid'
     end

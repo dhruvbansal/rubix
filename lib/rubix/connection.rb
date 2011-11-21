@@ -54,7 +54,7 @@ module Rubix
 
     def till_response attempt=1, max_attempts=5, &block
       response = block.call
-      Rubix.logger.log(Logger::DEBUG, response.body, 'RECV') if Rubix.logger
+      Rubix.logger.log(Logger::DEBUG, "RECV: #{response.body}") if Rubix.logger
       case
       when response.code.to_i >= 500 && attempt <= max_attempts
         sleep 1                 # FIXME make the sleep time configurable...
@@ -82,7 +82,7 @@ module Rubix
 
     def raw_post_request raw_params
       json_body = raw_params.to_json
-      Rubix.logger.log(Logger::DEBUG, json_body, 'SEND') if Rubix.logger
+      Rubix.logger.log(Logger::DEBUG, "SEND: #{json_body}") if Rubix.logger
       Net::HTTP::Post.new(uri.path).tap do |req|
         req['Content-Type'] = 'application/json-rpc'
         req.body            = json_body

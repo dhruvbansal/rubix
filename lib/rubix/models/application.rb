@@ -35,10 +35,6 @@ module Rubix
       new(params)
     end
     
-    def log_name
-      "APP #{name || id}@#{host.name}"
-    end
-
     def self.id_field
       'applicationid'
     end
