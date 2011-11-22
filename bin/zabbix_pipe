@@ -14,8 +14,9 @@ Settings.define 'verbose', :description => "Be verbose", :required => false, :ty
 #
 # Configuration for talking with the Zabbix server
 #
-Settings.define 'server',             :description => "Hostname/IP of the Zabbix server",                        :required => true
+Settings.define 'server',             :description => "Hostname/IP of the Zabbix server",                        :required => true, :default => 'localhost'
 Settings.define 'host',               :description => "Name of the (possibly new) Zabbix host to write data to", :required => true
+Settings.define 'configuration_file', :description => "Path to the Zabbix agent configuration file",             :required => true, :default => '/etc/zabbix/zabbix_agentd.conf'
 
 #
 # Configuration for talking with the Zabbix API
@@ -45,33 +46,30 @@ Settings.define 'sender',             :description => "Path to the zabbix_sender
 Settings.define 'pipe',               :description => "Path to the named pipe to read from",                     :required => false
 Settings.define 'pipe_read_sleep',    :description => "Seconds to sleep between reads from pipe",                :required => true, :type => Float, :default => 0.1
 
-if $0 == __FILE__
-  begin
-    Settings.resolve!
-  rescue RuntimeError => e
-    $stderr.puts e.message
-    exit(1)
-  end
-
-  begin
-    Rubix.connect((Settings[:url] || File.join(Settings[:server], 'api_jsonrpc.php')), Settings[:username], Settings[:password])
-    
-  rescue Rubix::Error => e
-    $stderr.puts e.message
-    exit(1)
-  end
-
-  begin
-    sender = Rubix::Sender.new(Settings)
-  rescue Rubix::Error => e
-    $stderr.puts e.message
-    exit(1)
-  end
-
-  begin
-    sender.run
-  rescue => e
-    $stderr.puts "#{e.class} -- #{e.message}"
-  end
+begin
+  Settings.resolve!
+rescue RuntimeError => e
+  $stderr.puts e.message
+  exit(1)
 end
+
+begin
+  Rubix.connect((Settings[:url] || File.join(Settings[:server], 'api_jsonrpc.php')), Settings[:username], Settings[:password])
   
+rescue Rubix::Error => e
+  $stderr.puts e.message
+  exit(1)
+end
+
+begin
+  sender = Rubix::Sender.new(Settings)
+rescue Rubix::Error => e
+  $stderr.puts e.message
+  exit(1)
+end
+
+begin
+  sender.run
+rescue => e
+  $stderr.puts "#{e.class} -- #{e.message}"
+end

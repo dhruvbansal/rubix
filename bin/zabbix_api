@@ -19,42 +19,38 @@ def Settings.usage
   %Q{usage: #{raw_script_name} [...--param=val...] METHOD PARAMS}
 end
 
-if $0 == __FILE__
+begin
+  Settings.resolve!
+rescue RuntimeError => e
+  puts e.message
+  Settings.dump_help
+  exit(1)
+end
+
+if Settings.rest.size < 2
+  Settings.dump_help
+  exit(1)
+end
+
+method      = Settings.rest[0]
+json_params = Settings.rest[1]
+
+begin
+  Rubix.connect(Settings[:url], Settings[:username], Settings[:password])
   
-  begin
-    Settings.resolve!
-  rescue RuntimeError => e
-    puts e.message
-    Settings.dump_help
-    exit(1)
+  params   = JSON.parse(json_params)
+  response = Rubix.connection.request(method, params)
+  
+  if Settings[:pretty]
+    puts JSON.pretty_generate(response.parsed)
+  else
+    puts response.parsed.to_json
   end
-
-  if Settings.rest.size < 2
-    Settings.dump_help
-    exit(1)
-  end
-
-  method      = Settings.rest[0]
-  json_params = Settings.rest[1]
-
-  begin
-    Rubix.connect(Settings[:url], Settings[:username], Settings[:password])
-    
-    params   = JSON.parse(json_params)
-    response = Rubix.connection.request(method, params)
-    
-    if Settings[:pretty]
-      puts JSON.pretty_generate(response.parsed)
-    else
-      puts response.parsed.to_json
-    end
-    
-  rescue JSON::ParserError => e
-    puts "Invalid JSON -- #{e.message}"
-    exit(1)
-  rescue Rubix::Error => e
-    puts e.message
-    exit(1)
-  end
-
+  
+rescue JSON::ParserError => e
+  puts "Invalid JSON -- #{e.message}"
+  exit(1)
+rescue Rubix::Error => e
+  puts e.message
+  exit(1)
 end
