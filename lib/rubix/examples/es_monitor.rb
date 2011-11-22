@@ -74,7 +74,7 @@ class ESMonitor < Rubix::ClusterMonitor
     index_data['indices'].each_pair do |index_name, index_data|
       write({
               :hostname   => "#{cluster_name}-elasticsearch",
-              :hostgroup  => self.class::CLUStER_HOSTGROUP,
+              :hostgroup  => self.class::CLUSTER_HOSTGROUPS,
               :templates  => self.class::CLUSTER_TEMPLATES,
               :appliation => index_name
             }) do |d|
