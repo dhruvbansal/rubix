@@ -49,7 +49,7 @@ class ESMonitor < Rubix::ClusterMonitor
     end
     write({
             :hostname    => "#{cluster_name}-elasticsearch",
-            :hostgroup   => self.class::CLUSTER_HOSTGROUPS
+            :hostgroup   => self.class::CLUSTER_HOSTGROUPS,
             :templates   => self.class::CLUSTER_TEMPLATES,
             :application => self.class::CLUSTER_APPLICATIONS
           }) do |d|
