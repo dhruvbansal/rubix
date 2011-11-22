@@ -22,6 +22,8 @@ few goals:
 - Have as few dependencies as possible: the core classes only depend
   on Ruby 1.8 standard library & +JSON+ and scripts additionally
   depend on +Configliere+[http://github.com/mrflip/configliere].
+
+- Play nicely with Chef[http://www.opscode.com/chef/]  
   
 There are a lot of other projects out there that connect Ruby to
 Zabbix.  Here's a quick list:
@@ -266,4 +268,86 @@ using the <tt>--fast</tt> pipe at <tt>/dev/zabbix</tt>.
 
 == Monitors
 
-FIXME Rubix has some pre-built monitors...
+Rubix also comes with some classes that make it easy to write simple
+monitors.  The output of these monitors should match the expected
+input format of +zabbix_pipe+.  This way they can be chained together.
+Here's an example of a simple monitor that calculates the currently
+used memory in bytes.
+
+  # in memory_monitor.rb
+  require 'rubix'
+
+  class MemoryMonitor < Rubix::Monitor
+    def measure
+      write do |data|
+        mem_used = `free | tail -n+2 | head -n1`.chomp.split[2].to_i
+        data << [['mem.used', mem_used]]
+      end
+    end
+  end
+
+  MemoryMonitor.run if $0 == __FILE__
+
+The file <tt>memory_monitor.rb</tt> can now be run on the command line in
+various ways:
+
+  # Write the output to STDOUT
+  $ ruby memory_monitor.rb
+  'mem.used'	11595908
+
+  # Loop every 30 seconds
+  $ ruby memory_monitor.rb --loop=30
+
+  'mem.used'	11595760
+  'mem.used'	11595800
+  'mem.used'	11596016
+  'mem.used'	11596008
+
+It can be piped into a running +zabbix_pipe+:
+
+  $ ruby memory_monitor.rb --loop=30 > /dev/zabbix &
+
+=== Monitors with Chef
+
+It's useful to be able to monitor resources defined in
+Chef[http://www.opscode.com/chef/] and so Rubix comes with a
++ChefMonitor+ class.
+
+  # in webserver_monitor.rb
+  require 'rubix'
+  require 'net/http'
+  require 'uri'
+  
+  class WebserverMonitor < Rubix::ChefMonitor
+
+    def webserver
+      @webserver ||= chef_node_from_node_name('my_webserver')
+    end
+
+    def uri
+      URI.parse("http://#{webserver['ec2']['public_hostname']}")
+    end
+  
+    def measure
+      begin
+        if Net::HTTP.get_response(uri).code.to_i == 200
+	  availability = 1
+	else
+	  availability = 0
+	end
+      rescue => e
+        availability = 0
+      end
+      write do |data|
+        data << ([['webserver.available', availability]])
+      end
+    end
+  end
+
+  WebserverMonitor.run if $0 == __FILE__
+
+To run this monitor you'll have to pass in credentials used to authenticate with Chef:
+
+  $ sudo ruby webserver_monitor.rb --chef_server_url=http://api.opscode.com/organizations/my_company --chef_node_name=this_node --chef_client_key=/etc/chef/client.pem --loop=30 > /dev/zabbix
+
+Make sure you can read the file at <tt>/etc/chef/client.pem</tt>!
