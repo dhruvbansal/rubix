@@ -9,11 +9,15 @@ require 'open-uri'
 class ESMonitor < Rubix::ClusterMonitor
 
   # Hostgroup for any hosts that needs to be created.
-  HOSTGROUP = 'Elasticsearch clusters'
+  CLUSTER_HOSTGROUPS = 'Elasticsearch clusters'
 
   # Templates for any hosts that need to be created.
   CLUSTER_TEMPLATES = 'Template_Elasticsearch_Cluster'
   NODE_TEMPLATES    = 'Template_Elasticsearch_Node'
+  
+  # Applications for new items
+  CLUSTER_APPLICATIONS = '_cluster'
+  NODE_APPLICATIONS    = 'Elasticsearch'
 
   def node_query
     'provides_service:*-elasticsearch'
@@ -45,9 +49,9 @@ class ESMonitor < Rubix::ClusterMonitor
     end
     write({
             :hostname    => "#{cluster_name}-elasticsearch",
-            :application => "_cluster",                 
+            :hostgroup   => self.class::CLUSTER_HOSTGROUPS
             :templates   => self.class::CLUSTER_TEMPLATES,
-            :hostgroup   => self.class::HOSTGROUP
+            :application => self.class::CLUSTER_APPLICATIONS
           }) do |d|
       d << ['status',              cluster_health['status']               ]
       d << ['nodes.total',         cluster_health['number_of_nodes']      ]
@@ -70,9 +74,9 @@ class ESMonitor < Rubix::ClusterMonitor
     index_data['indices'].each_pair do |index_name, index_data|
       write({
               :hostname   => "#{cluster_name}-elasticsearch",
-              :appliation => index_name,
+              :hostgroup  => self.class::CLUStER_HOSTGROUP,
               :templates  => self.class::CLUSTER_TEMPLATES,
-              :hostgroup  => self.class::HOSTGROUP
+              :appliation => index_name
             }) do |d|
         d << ["#{index_name}.size",           index_data["index"]["size_in_bytes"] ]
         d << ["#{index_name}.docs.num",       index_data["docs"]["num_docs"]       ]
@@ -102,8 +106,8 @@ class ESMonitor < Rubix::ClusterMonitor
       next unless node_name
       write({
               :hostname    => node_name,
-              :application => "Elasticsearch",
-              :templates   => self.class::NODE_TEMPLATES
+              :templates   => self.class::NODE_TEMPLATES,
+              :application => self.class::NODE_APPLICATIONS
             }) do |d|
         # concurrency
         d << ['es.jvm.threads.count',     stats['jvm']['threads']['count']                   ]

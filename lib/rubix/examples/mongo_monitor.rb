@@ -1,17 +1,23 @@
 #!/usr/bin/env ruby
 
-require 'zabbix_cluster_monitor'
+RUBIX_ROOT = File.expand_path('../../../../lib', __FILE__)
+$: << RUBIX_ROOT unless $:.include?(RUBIX_ROOT)
+
+require 'rubix'
 require 'open-uri'
 require 'set'
 require 'mongo'
 
-class MongoMonitor < ZabbixClusterMonitor
+class MongoMonitor < Rubix::ClusterMonitor
   
   # Hostgroup for any hosts that needs to be created.
-  HOSTGROUP = 'MongoDB clusters'
+  CLUSTER_HOSTGROUPS = 'MongoDB clusters'
 
   # Templates for any hosts that need to be created.
-  TEMPLATES = 'Template_MongoDB'
+  CLUSTER_TEMPLATES = 'Template_MongoDB'
+
+  # Applications
+  CLUSTER_APPLICATIONS = '_cluster'
 
   # Names of database to ignore when we find them.
   IGNORED_DATABASES = %w[db test admin local].to_set
@@ -44,12 +50,11 @@ class MongoMonitor < ZabbixClusterMonitor
     initial = db.command(command) ; sleep 1.0 ; final = db.command(command)
     return false unless initial && final
     dt = final['localTime'].to_f - initial['localTime'].to_f
-
     write({
-             :hostname    => "#{cluster_name}-mongodb",
-             :application => '_cluster',
-             :hostgroup   => self.class::HOSTGROUP,
-             :templates   => self.class::TEMPLATES
+            :hostname    => "#{cluster_name}-mongodb",
+            :hostgroup   => self.class::CLUSTER_HOSTGROUPS,
+            :templates   => self.class::CLUSTER_TEMPLATES,
+            :application => self.class::CLUSTER_APPLICATIONS
            }) do |d|
       
       # operations
@@ -102,10 +107,10 @@ class MongoMonitor < ZabbixClusterMonitor
       stats = connection.db(database_name).stats()
 
       write({
-               :hostname    => "#{cluster_name}-mongodb",
-               :application => database_name,
-               :hostgroup   => self.class::HOSTGROUP,
-               :templates   => self.class::TEMPLATES
+              :hostname    => "#{cluster_name}-mongodb",
+              :hostgroup   => self.class::CLUSTER_HOSTGROUPS,
+              :templates   => self.class::CLUSTER_TEMPLATES,
+              :application => database_name
              }) do |d|
         d << ["#{database_name}.collections",      stats["collections"] ]
         d << ["#{database_name}.objects.count",    stats["objects"]     ]

@@ -1,17 +1,24 @@
 #!/usr/bin/env ruby
 
-require 'zabbix_cluster_monitor'
+RUBIX_ROOT = File.expand_path('../../../../lib', __FILE__)
+$: << RUBIX_ROOT unless $:.include?(RUBIX_ROOT)
+
+require 'rubix'
 require 'net/http'
 require 'crack'
 
-class HBaseMonitor < ZabbixClusterMonitor
+class HBaseMonitor < Rubix::ClusterMonitor
 
   # Hostgroups for clusters & hosts that need to be created.
-  CLUSTER_HOSTGROUP = 'HBase clusters'
+  CLUSTER_HOSTGROUPS = 'HBase clusters'
 
   # Templates for any hosts that need to be created.
   CLUSTER_TEMPLATES = 'Template_HBase_Cluster'
   NODE_TEMPLATES    = 'Template_HBase_Node'
+
+  # Applications for items that are written
+  CLUSTER_APPLICATIONS = '_cluster'
+  NODE_APPLICATIONS    = "Hbase"
 
   def matching_chef_nodes
     Chef::Search::Query.new.search('node', 'provides_service:*hbase-stargate AND facet_name:alpha')
@@ -45,8 +52,8 @@ class HBaseMonitor < ZabbixClusterMonitor
 
     write({
             :hostname    => "#{cluster_name}-hbase",
-            :application => '_cluster',
-            :hostgroup   => 'HBase Clusters',
+            :hostgroup   => self.class::CLUSTER_HOSTGROUPS,
+            :application => self.class::CLUSTER_APPLICATIONS,
             :templates   => self.class::CLUSTER_TEMPLATES
           }) do |d|
       d << ['requests',    cluster_status['requests']]
@@ -72,7 +79,7 @@ class HBaseMonitor < ZabbixClusterMonitor
       next unless node_name
       write({
               :hostname    => node_name,
-              :application => "HBase",
+              :application => self.class::NODE_APPLICATIONS,
               :templates   => self.class::NODE_TEMPLATES
             }) do |d|
         d << ['hbase.regions',   (live_node['Region'] || []).size]
