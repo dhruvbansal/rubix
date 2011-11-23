@@ -16,13 +16,37 @@ module Rubix
     
     attr_accessor :name
 
-    def self.find_request options={}
-      request('application.get', 'hostids' => [options[:host_id]], 'filter' => {'name' => options[:name], 'applicationid' => options[:id]}, "output" => "extend")
+    #
+    # == Associations ==
+    #
+
+    include Associations::BelongsToHost
+
+    #
+    # == Requests == 
+    #
+    
+    def create_params
+      {:name => name, :hostid => host_id}
     end
 
+    def update_params
+      { id_field => id, :name => name, :hosts => {:hostid => host_id}}
+    end
+    
+    def self.find_params options={}
+      super().merge({
+                      :hostids => [options[:host_id]],
+                      :filter => {
+                        :name   => options[:name],
+                        id_field => options[:id]
+                      }
+                    })
+    end
+      
     def self.build app
       params = {
-        :id   => app['applicationid'].to_i,
+        :id   => app[id_field].to_i,
         :name => app['name']
       }
 
@@ -33,33 +57,6 @@ module Rubix
         params[:host_id] = app['templateid']
       end
       new(params)
-    end
-    
-    def self.id_field
-      'applicationid'
-    end
-    
-    
-    #
-    # == Associations ==
-    #
-
-    include Associations::BelongsToHost
-    
-    #
-    # == CRUD ==
-    #
-    
-    def create_request
-      request('application.create', 'name' => name, 'hostid' => host_id)
-    end
-
-    def update_request
-      request('application.update', 'applicationid' => id, 'name' => name, 'hosts' => {'hostid' => host_id})
-    end
-
-    def destroy_request
-      request('application.delete', [id])
     end
     
   end

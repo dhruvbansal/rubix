@@ -6,30 +6,24 @@ module Rubix
     # == Properties & Finding ==
     #
     
-    attr_accessor :name, :value
-
+    attr_accessor :value
+    
     def initialize properties={}
       super(properties)
-      @name  = properties[:name] || self.class.unmacro_name(properties[:macro])
+      self.name  = properties[:name] || self.class.unmacro_name(properties[:macro])
       @value = properties[:value]
 
       self.host    = properties[:host]
       self.host_id = properties[:host_id]
     end
 
-    def self.find_request options={}
-      request('usermacro.get', 'hostids' => [options[:host_id]], 'filter' => {'macro' => macro_name(options[:name])}, "output" => "extend")
+    attr_reader :name
+    def name= n
+      return if n.nil? || n.empty?
+      raise ValidationError.new("Cannot change the name of a UserMacro once it's created.") if @name && (!new_record?)
+      @name = n
     end
 
-    def self.build macro
-      new({
-            :id      => macro['hostmacroid'].to_i,
-            :name    => unmacro_name(macro['macro']),
-            :value   => macro['value'],
-            :host_id => macro['hostid']
-          })
-    end
-    
     def self.unmacro_name name
       (name || '').gsub(/^\{\$/, '').gsub(/\}$/, '').upcase
     end
@@ -46,6 +40,10 @@ module Rubix
       'hostmacroid'
     end
 
+    def resource_name
+      "#{self.class.resource_name} #{self.name || self.id}"
+    end
+
     #
     # == Associations ==
     #
@@ -55,25 +53,48 @@ module Rubix
     #
     # == Validation ==
     #
+    
     def validate
       raise ValidationError.new("A user macro must have both a 'name' and a 'value'") if name.nil? || name.strip.empty? || value.nil? || value.strip.empty?
       true
     end
     
     #
-    # == CRUD ==
+    # == Requests ==
     #
+
+    def mass_add_params
+      { :macros => [{:macro => macro_name, :value => value}], :hosts => [{:hostid => host_id}] }
+    end
     
     def create_request
-      request('usermacro.massAdd', 'macros' => [{'macro' => macro_name, 'value' => value}], 'hosts' => [{'hostid' => host_id}])
+      request('usermacro.massAdd', mass_add_params)
     end
     
     def update_request
-      request('usermacro.massUpdate', 'macros' => [{'macro' => macro_name, 'value' => value}], 'hosts' => [{'hostid' => host_id}])
+      request('usermacro.massUpdate', mass_add_params)
     end
 
     def destroy_request
-      request('usermacro.massRemove', 'hostids' => [host_id], 'macros' => [macro_name])
+      request('usermacro.massRemove', :hostids => [host_id], :macros => [macro_name])
+    end
+
+    def self.find_params options={}
+      super().merge({
+                      :hostids => [options[:host_id]],
+                      :filter => {
+                        :macro => macro_name(options[:name])
+                      }
+                    })
+    end
+
+    def self.build macro
+      new({
+            :id      => macro[id_field].to_i,
+            :name    => unmacro_name(macro['macro']),
+            :value   => macro['value'],
+            :host_id => macro['hostid']
+          })
     end
     
   end

@@ -19,30 +19,6 @@ module Rubix
       self.host_groups    = properties[:host_groups]
     end
 
-    def self.find_request options={}
-      params = {'select_groups' => 'refer', 'select_hosts' => 'refer', 'output' => 'extend'}
-      case
-      when options[:id]
-        params['templateids'] = [options[:id]]
-      when options[:name]
-        params['filter'] = { 'host' => options[:name] }
-      end
-      request('template.get', params)
-    end
-
-    def self.build template
-      new({
-            :id       => (template['templateid'] || template['hostid']).to_i,
-            :name     => template['host'],
-            :host_ids => template['hosts'].map { |host_info| host_info['hostid'].to_i },
-            :host_group_ids => template['groups'].map { |group| group['groupid'].to_i }
-          })
-    end
-
-    def self.id_field
-      'templateid'
-    end
-
     #
     # == Validation ==
     #
@@ -63,16 +39,33 @@ module Rubix
     # == CRUD ==
     #
     
-    def create_request
-      request('template.create', {'host' => name, 'groups' => host_group_params})
+    def create_params
+      {:host => name, :groups => host_group_params}
     end
     
-    def update_request
-      request('template.update', [{'host' => name, 'templateid' => id, 'groups' => host_group_params}])
+    def update_params
+      [create_params.merge(id_field => id)]
     end
 
-    def destroy_request
-      request('template.delete', [{'templateid' => id}])
+    def destroy_params
+      [{id_field => id}]
+    end
+
+    def self.get_params
+      super().merge(:select_groups => :refer, :select_hosts => :refer)
+    end
+
+    def self.find_params options={}
+      get_params.merge(:filter => {:host => options[:name], :hostid => options[:id]})
+    end
+
+    def self.build template
+      new({
+            :id       => (template[id_field] || template['hostid']).to_i,
+            :name     => template['host'],
+            :host_ids => template['hosts'].map { |host_info| host_info['hostid'].to_i },
+            :host_group_ids => template['groups'].map { |group| group['groupid'].to_i }
+          })
     end
     
   end

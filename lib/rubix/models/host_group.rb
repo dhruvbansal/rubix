@@ -16,17 +16,6 @@ module Rubix
     
     attr_accessor :name
 
-    def self.find_request options={}
-      request('hostgroup.get', 'filter' => {'groupid' => options[:id], 'name' => options[:name]}, 'select_hosts' => 'refer', 'output' => 'extend')
-    end
-
-    def self.build host_group
-      new({
-            :id       => host_group['groupid'].to_i,
-            :name     => host_group['name'],
-            :host_ids => host_group['hosts'].map { |host_info| host_info['hostid'].to_i }
-          })
-    end
     
     def self.id_field
       'groupid'
@@ -39,20 +28,32 @@ module Rubix
     include Associations::HasManyHosts
 
     #
-    # == CRUD ==
+    # == Requests ==
     #
+
+    def create_params
+      {:name => name}
+    end
+
+    def destroy_params
+      [{id_field => id}]
+    end
+
+    def self.get_params
+      super().merge(:select_hosts => :refer)
+    end
+
+    def self.find_params options={}
+      get_params.merge(:filter => {id_field => options[:id], :name => options[:name]})
+    end
+
+    def self.build host_group
+      new({
+            :id       => host_group[id_field].to_i,
+            :name     => host_group['name'],
+            :host_ids => host_group['hosts'].map { |host_info| host_info['hostid'].to_i }
+          })
+    end
     
-    def create_request
-      request('hostgroup.create', [{'name' => name}])
-    end
-
-    def update_request
-      request('hostgroup.update', [{'groupid' => id, 'name' => name}])
-    end
-
-    def destroy_request
-      request('hostgroup.delete', [{'groupid' => id}])
-    end
-
   end
 end

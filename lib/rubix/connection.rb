@@ -10,7 +10,7 @@ module Rubix
 
     include Logs
 
-    attr_reader :uri, :server, :auth, :request_id, :username, :password
+    attr_reader :uri, :server, :auth, :request_id, :username, :password, :last_response
 
     def initialize uri_or_string, username=nil, password=nil
       self.uri    = uri_or_string
@@ -62,7 +62,7 @@ module Rubix
       when response.code.to_i >= 500
         raise ConnectionError.new("Too many consecutive failed requests (#{max_attempts}) to the Zabbix API at (#{uri}).")
       else
-        Response.new(response)
+        @last_response = Response.new(response)
       end
     end
     

@@ -66,25 +66,6 @@ module Rubix
     def resource_name
       "#{self.class.resource_name} #{self.key || self.id}"
     end
-    
-    def self.find_request options={}
-      request('item.get', 'hostids' => [options[:host_id]], 'filter' => {'key_' => options[:key], 'id' => options[:id]}, "select_applications" => "refer", "output" => "extend")
-    end
-
-    def self.build item
-      new({
-            :id              => item['itemid'].to_i,
-            :host_id         => item['hostid'].to_i,
-            :description     => item['description'],
-            :value_type      => item['value_type'] ? self::VALUE_NAMES[item['value_type'].to_i] : :character,
-            :application_ids => (item['applications'] || []).map { |app| app['applicationid'].to_i },
-            :key             => item['key_']
-          })
-    end
-    
-    def self.id_field
-      'itemid'
-    end
 
     def value_type= vt
       if vt.nil? || vt.to_s.empty? || !self.class::VALUE_CODES.include?(vt.to_sym)
@@ -102,10 +83,10 @@ module Rubix
     include Associations::HasManyApplications
 
     #
-    # == CRUD == 
+    # == Requests == 
     #
     
-    def params
+    def create_params
       {
         :hostid       => host_id,
         :description  => (description || 'Unknown'),
@@ -116,17 +97,30 @@ module Rubix
         p[:applications] = application_ids if application_ids
       end
     end
+
+    def self.get_params
+      super().merge(:select_applications => :refer)
+    end
     
-    def create_request
-      request('item.create', params)
+    def self.find_params options={}
+      super().merge({
+                      :hostids => [options[:host_id]],
+                      :filter => {
+                        :key_ => options[:key],
+                        :id   => options[:id]
+                      }
+                    })
     end
 
-    def update_request
-      request('item.update', params.merge('itemid' => id))
-    end
-
-    def destroy_request
-      request('item.delete', [id])
+    def self.build item
+      new({
+            :id              => item[id_field].to_i,
+            :host_id         => item['hostid'].to_i,
+            :description     => item['description'],
+            :value_type      => item['value_type'] ? self::VALUE_NAMES[item['value_type'].to_i] : :character,
+            :application_ids => (item['applications'] || []).map { |app| app['applicationid'].to_i },
+            :key             => item['key_']
+          })
     end
     
   end

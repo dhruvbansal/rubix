@@ -4,27 +4,23 @@ describe "CRUD for hosts" do
 
   before do
     @hg1 = Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1')
-    @hg1.save
+    ensure_save(@hg1)
 
     @hg2 = Rubix::HostGroup.new(:name => 'rubix_spec_host_group_2')
-    @hg2.save
+    ensure_save(@hg2)
     
     @t1 = Rubix::Template.new(:name => 'rubix_spec_template_1', :host_groups => [@hg1])
-    @t1.save
+    ensure_save(@t1)
 
     @t2 = Rubix::Template.new(:name => 'rubix_spec_template_2', :host_groups => [@hg2])
-    @t2.save
+    ensure_save(@t2)
 
     @um1 = Rubix::UserMacro.new(:name => 'rubix_spec_macro_1', :value => 'rubix_spec_value_1')
-    @um2 = Rubix::UserMacro.new(:name => 'rubix_spec_macro_2', :value => 'rubix_spec_value_2')
     
   end
 
   after do
-    @t1.destroy
-    @t2.destroy
-    @hg1.destroy
-    @hg2.destroy
+    ensure_destroy(@um1, @t1, @t2, @hg1, @hg2)
   end
   
   it "should be able to create, update, and destroy a host" do
@@ -32,39 +28,36 @@ describe "CRUD for hosts" do
     
     Rubix::Host.find(:name => 'rubix_spec_host_1').should be_nil
     
-    h = Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@hg1], :templates => [@t1], :user_macros => [@um1])
-    h.save
-    begin
-      new_h = Rubix::Host.find(:name => 'rubix_spec_host_1')
-      new_h.should_not be_nil
-      new_h.template_ids.should include(@t1.id)
-      new_h.host_group_ids.should include(@hg1.id)
-      new_h.user_macros.size.should == 1
-      new_h.user_macros.first.name.should  == 'RUBIX_SPEC_MACRO_1'
-      new_h.user_macros.first.value.should == 'rubix_spec_value_1'
+    h1 = Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@hg1], :templates => [@t1], :user_macros => [@um1])
+    h1.save.should be_true
+    id = h1.id
+    id.should_not be_nil
+    
+    ensure_destroy(h1) do
+      h2 = Rubix::Host.find(:name => 'rubix_spec_host_1')
+      h2.should_not be_nil
+      h2.template_ids.should include(@t1.id)
+      h2.host_group_ids.should include(@hg1.id)
+      h2.user_macros.size.should == 1
+      h2.user_macros.first.name.should  == 'RUBIX_SPEC_MACRO_1'
+      h2.user_macros.first.value.should == 'rubix_spec_value_1'
       
-      id = h.id
-      id.should_not be_nil
+      h1.name = 'rubix_spec_host_2'
+      h1.host_groups = [@hg2]
+      h1.templates = [@t2]
+      h1.save.should be_true
       
-      h.name = 'rubix_spec_host_2'
-      h.host_groups = [@hg2]
-      h.templates = [@t2]
-      h.user_macros = [@um2]
-      h.update
-      
-      new_h = Rubix::Host.find(:name => 'rubix_spec_host_2')
-      new_h.should_not be_nil
-      new_h.template_ids.should include(@t2.id)
-      new_h.host_group_ids.should include(@hg2.id)
-      new_h.user_macros.size.should == 1
-      new_h.user_macros.first.name.should  == 'RUBIX_SPEC_MACRO_2'
-      new_h.user_macros.first.value.should == 'rubix_spec_value_2'
-    rescue => e
-      puts "#{e.class} -- #{e.message}"
-      puts e.backtrace
-    ensure
-      h.destroy
+      h2 = Rubix::Host.find(:name => 'rubix_spec_host_2')
+      h2.should_not be_nil
+      h2.template_ids.should include(@t2.id)
+      h2.host_group_ids.should include(@hg2.id)
+      h2.user_macros.size.should == 1
+      h2.user_macros.first.name.should  == 'RUBIX_SPEC_MACRO_1'
+      h2.user_macros.first.value.should == 'rubix_spec_value_1'
+
+      h1.destroy
+      Rubix::Host.find(:id => id).should be_nil
     end
-    Rubix::Host.find(:id => id).should be_nil
+    
   end
 end

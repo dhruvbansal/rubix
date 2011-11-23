@@ -4,16 +4,14 @@ describe "CRUD for templates" do
 
   before do
     @hg1 = Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1')
-    @hg1.save
+    ensure_save(@hg1)
 
     @hg2 = Rubix::HostGroup.new(:name => 'rubix_spec_host_group_2')
-    @hg2.save
-    
+    ensure_save(@hg2)
   end
 
   after do
-    @hg1.destroy
-    @hg2.destroy
+    ensure_destroy(@hg1, @hg2)
   end
 
   it "should be able to create, update, and destroy a template" do
@@ -21,27 +19,29 @@ describe "CRUD for templates" do
     
     Rubix::Template.find(:name => 'rubix_spec_template_1').should be_nil
     
-    t = Rubix::Template.new(:name => 'rubix_spec_template_1', :host_groups => [@hg1])
-    t.save
-    
-    new_t = Rubix::Template.find(:name => 'rubix_spec_template_1')
-    new_t.should_not be_nil
-    new_t.id.should == t.id
-    new_t.host_group_ids.should include(@hg1.id)
-    id = t.id
+    t1 = Rubix::Template.new(:name => 'rubix_spec_template_1', :host_groups => [@hg1])
+    t1.save.should be_true
+    id = t1.id
     id.should_not be_nil
 
-    t.name = 'rubix_spec_template_2'
-    t.host_groups = [@hg2]
-    t.update
+    ensure_destroy(t1) do
+      t2 = Rubix::Template.find(:name => 'rubix_spec_template_1')
+      t2.should_not be_nil
+      t2.id.should == id
+      t2.host_group_ids.should include(@hg1.id)
+      
+      t1.name = 'rubix_spec_template_2'
+      t1.host_groups = [@hg2]
+      t1.save.should be_true
 
-    new_t = Rubix::Template.find(:id => id)
-    new_t.name.should == 'rubix_spec_template_2'
-    new_t.host_group_ids.should_not include(@hg1.id)
-    new_t.host_group_ids.should     include(@hg2.id)
-    
-    t.destroy
-    Rubix::Template.find(:id => id).should be_nil
+      t2 = Rubix::Template.find(:id => id)
+      t2.name.should == 'rubix_spec_template_2'
+      t2.host_group_ids.should_not include(@hg1.id)
+      t2.host_group_ids.should     include(@hg2.id)
+      
+      t1.destroy
+      Rubix::Template.find(:id => id).should be_nil
+    end
   end
 
   it "should be able to import and export a template" do

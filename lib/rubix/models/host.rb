@@ -33,26 +33,6 @@ module Rubix
       self.user_macros    = properties[:user_macros]
     end
 
-    def self.find_request options={}
-      request('host.get', 'filter' => {'host' => options[:name], 'hostid' => options[:id]}, 'select_groups' => 'refer', 'selectParentTemplates' => 'refer', 'select_profile' => 'refer', 'select_macros' => 'extend', 'output' => 'extend')
-    end
-
-    def self.build host
-      new({
-            :id             => host['hostid'].to_i,
-            :name           => host['host'],
-            :host_group_ids => host['groups'].map { |group| group['groupid'].to_i },
-            :template_ids   => host['parentTemplates'].map { |template| (template['templateid'] || template['hostid']).to_i },
-            :user_macros    => host['macros'].map { |um| UserMacro.new(:host_id => um['hostid'].to_i, :id => um['hostmacroid'], :value => um['value'], :macro => um['macro']) },
-            :profile        => host['profile'],
-            :port           => host['port']
-          })
-    end
-    
-    def self.id_field
-      'hostid'
-    end
-
     #
     # == Associations == 
     #
@@ -71,37 +51,40 @@ module Rubix
     end
     
     #
-    # == CRUD ==
+    # == Requests ==
     #
 
-    def params
-      {}.tap do |hp|
-        hp['host']    = name
-        
-        hp['profile'] = profile if profile
-        hp['status']  = status  if status
+    def create_params
+      {
+        :host      => name,
+        :groups    => host_group_params,
+        :templates => template_params,
+        :macros    => user_macro_params
+      }.tap do |hp|
+        hp[:profile] = profile if profile
+        hp[:status]  = status  if status
         
         if ip
-          hp['ip']      = ip
-          hp['useip']   = true
-          hp['port']    = port || self.class::DEFAULT_PORT
+          hp[:ip]      = ip
+          hp[:useip]   = true
+          hp[:port]    = port || self.class::DEFAULT_PORT
         else
-          hp['ip'] = self.class::BLANK_IP
+          hp[:ip] = self.class::BLANK_IP
         end
-        
       end
     end
     
-    def create_request
-      request('host.create', params.merge('groups' => host_group_params, 'templates' => template_params, 'macros' => user_macro_params))
-    end
-
-    def update_request
-      request('host.update', params.merge('hostid' => id))
+    def update_params
+      create_params.tap do |cp|
+        cp.delete(:groups)
+        cp.delete(:templates)
+        cp.delete(:macros)
+        cp[id_field] = id
+      end
     end
 
     def before_update
-      response = request('host.massUpdate', { 'groups' => host_group_params, 'templates' => template_params, 'macros' => user_macro_params, 'hosts' => [{'hostid' => id}]})
+      response = request('host.massUpdate', { :groups => host_group_params, :templates => template_params, :macros => user_macro_params, :hosts => [{id_field => id}]})
       if response.has_data?
         true
       else
@@ -110,8 +93,33 @@ module Rubix
       end
     end
     
-    def destroy_request
-      request('host.delete', [{'hostid' => id}])
+    def destroy_params
+      [{id_field => id}]
+    end
+
+    def before_destroy
+      return true if user_macros.nil? || user_macros.empty?
+      user_macros.map { |um| um.destroy }.all?
+    end
+
+    def self.build host
+      new({
+            :id             => host[id_field].to_i,
+            :name           => host['host'],
+            :host_group_ids => host['groups'].map { |group| group['groupid'].to_i },
+            :template_ids   => host['parentTemplates'].map { |template| (template['templateid'] || template[id_field]).to_i },
+            :user_macros    => host['macros'].map { |um| UserMacro.new(:host_id => um[id_field].to_i, :id => um['hostmacroid'], :value => um['value'], :macro => um['macro']) },
+            :profile        => host['profile'],
+            :port           => host['port']
+          })
+    end
+    
+    def self.get_params
+      super().merge({:select_groups => :refer, :selectParentTemplates => :refer, :select_profile => :refer, :select_macros => :extend})
+    end
+
+    def self.find_params options={}
+      get_params.merge(:filter => {:host => options[:name], id_field => options[:id]})
     end
     
   end
