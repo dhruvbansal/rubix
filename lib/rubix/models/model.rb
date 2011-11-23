@@ -88,6 +88,7 @@ module Rubix
       if response.has_data?
         @id = response.result[id_field + 's'].first.to_i
         info("Created #{resource_name}")
+        true
       else
         error("Error creating #{resource_name}: #{response.error_message}")
         return false
