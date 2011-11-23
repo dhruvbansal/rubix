@@ -28,51 +28,63 @@ module Rubix
     def initialize settings
       @settings = settings
       confirm_settings
-      self.host = Host.new(:name => settings['host'])
-      if settings['fast']
-        info("Forwarding for #{self.host.name}...") if settings['verbose']
+      if fast?
+        info("Forwarding for #{settings['host']}...") if settings['verbose']
       else
         initialize_hostgroups
         initialize_templates
         initialize_host
         initialize_applications
-        info("Forwarding for #{self.host.name}...") if settings['verbose'] && host.exists?
+        info("Forwarding for #{host.name}...") if settings['verbose']
       end
     end
 
-    def alive?
-      settings['fast'] || host.exists?
+    def fast?
+      settings['fast']
     end
 
+    def auto_vivify?
+      !fast?
+    end
+    
     def initialize_hostgroups
-      self.host_groups = settings['host_groups'].split(',').flatten.compact.map { |group_name | HostGroup.find_or_create_by_name(group_name.strip) }
+      self.host_groups = settings['host_groups'].split(',').flatten.compact.map { |group_name | HostGroup.find_or_create(:name => group_name.strip) }
     end
 
     def initialize_templates
-      self.templates = (settings['templates'] || '').split(',').flatten.compact.map { |template_name | Template.find_or_create_by_name(template_name.strip) }
+      self.templates = (settings['templates'] || '').split(',').flatten.compact.map { |template_name | Template.find(:name => template_name.strip) }.compact
     end
 
     def initialize_host
-      unless host.exists?
-        host.host_groups = host_groups
-        host.templates   = templates
-        host.create
-      end
-      # if settings['verbose']
-      #   puts "Forwarding data for Host '#{settings['host']}' (#{host_id}) from #{settings['pipe']} to #{settings['server']}"
-      #   puts "Creating Items in Application '#{settings['application']}' (#{application_id}) at #{settings['api_server']} as #{settings['username']}"
-      # end
+      self.host = (Host.find(:name => settings['host']) || Host.new(:name => settings['host']))
+      host.host_groups = host_groups
+      host.templates   = templates
+      host.save
     end
 
     def initialize_applications
-      self.applications = (settings['applications'] || '').split(',').flatten.compact.map { |app_name| Application.find_or_create_by_name_and_host(app_name, host) }
+      application_names = (settings['applications'] || '').split(',').flatten.compact
+      self.applications = []
+      application_names.each do |app_name|
+        app = Application.find(:name => app_name, :host_id => host.id)
+        if app
+          self.applications << app
+        else
+          app = Application.new(:name => app_name, :host_id => host.id)
+          if app.save
+            self.applications << app
+          else
+            warn("Could not create application '#{app_name}' for host #{host.name}")
+          end
+        end
+      end
     end
 
     def confirm_settings
       raise ConnectionError.new("Must specify a Zabbix server to send data to.")     unless settings['server']
       raise Error.new("Must specify the path to a local configuraiton file")         unless settings['configuration_file'] && File.file?(settings['configuration_file'])
       raise ConnectionError.new("Must specify the name of a host to send data for.") unless settings['host']
-      raise ValidationError.new("Must define at least one host group.")              if settings['host_groups'].nil? || settings['host_groups'].empty?      
+      raise ValidationError.new("Must define at least one host group.")              if auto_vivify? && (settings['host_groups'].nil? || settings['host_groups'].empty?)
     end
     
     #
@@ -80,7 +92,6 @@ module Rubix
     #
 
     def run
-      return unless alive?
       case
       when settings['pipe']
         process_pipe
@@ -196,8 +207,8 @@ module Rubix
     # Or when sending for another host:
     # 
     #   {
-    #     'hostname': 'shazaam',
-    #     'application': 'silly',
+    #     'host': 'shazaam',
+    #     'applications': 'silly',
     #     'data': [
     #       {'key': 'foo.bar.baz',      'value': 10},
     #       {'key': 'snap.crackle.pop', 'value': 8 }
@@ -226,7 +237,6 @@ module Rubix
         # present in the line.
         begin
           daughter_pipe = self.class.new(settings.stringify_keys.merge(json))
-          return unless daughter_pipe.alive?
         rescue Error => e
           error(e.message)
           return
@@ -257,9 +267,23 @@ module Rubix
     # If the +key+ doesn't exist for this local agent's host, it will be
     # added.
     def send key, value, timestamp
-      item = Item.new(:key => key, :host => host, :applications => applications, :value_type => Item.value_type_from_value(value))
-      unless settings['fast'] || item.exists?
-        return unless item.create
+      ensure_item_exists(key, value) unless fast?
+      command = "#{settings['sender']} --config #{settings['configuration_file']} --zabbix-server #{settings['server']} --host #{settings['host']} --key #{key} --value '#{value}'"
+      process_zabbix_sender_output(key, `#{command}`)
+
+      # command = "zabbix_sender --config #{configuration_file} --zabbix-server #{server} --input-file - --with-timestamps"
+      # open(command, 'w') do |zabbix_sender|
+      #   zabbix_sender.write([settings['host'], key, timestamp.to_i, value].map(&:to_s).join("\t"))
+      #   zabbix_sender.close_write
+      #   process_zabbix_sender_output(zabbix_sender.read)
+      # end
+    end
+
+    def ensure_item_exists key, value
+      item = Item.find(:key => key, :host_id => host.id)
+      unless item
+        Item.new(:key => key, :host_id => host.id, :applications => applications, :value_type => Item.value_type_from_value(value)).save
+        
         # There is a time lag of about 15-30 seconds between (successfully)
         # creating an item on the Zabbix server and having the Zabbix accept
         # new data for that item.
@@ -274,17 +298,8 @@ module Rubix
         # points you send to Zabbix, then don't worry about it.
         sleep settings['create_item_sleep']
       end
-      command = "#{settings['sender']} --config #{settings['configuration_file']} --zabbix-server #{settings['server']} --host #{settings['host']} --key #{key} --value '#{value}'"
-      process_zabbix_sender_output(key, `#{command}`)
-
-      # command = "zabbix_sender --config #{configuration_file} --zabbix-server #{server} --input-file - --with-timestamps"
-      # open(command, 'w') do |zabbix_sender|
-      #   zabbix_sender.write([settings['host'], key, timestamp.to_i, value].map(&:to_s).join("\t"))
-      #   zabbix_sender.close_write
-      #   process_zabbix_sender_output(zabbix_sender.read)
-      # end
     end
-
+    
     # Parse the +text+ output by +zabbix_sender+.
     def process_zabbix_sender_output key, text
       return unless settings['verbose']

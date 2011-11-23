@@ -63,6 +63,10 @@ module Rubix
       self.application_ids = properties[:application_ids]
     end
 
+    def resource_name
+      "#{self.class.resource_name} #{self.key || self.id}"
+    end
+    
     def self.find_request options={}
       request('item.get', 'hostids' => [options[:host_id]], 'filter' => {'key_' => options[:key], 'id' => options[:id]}, "select_applications" => "refer", "output" => "extend")
     end

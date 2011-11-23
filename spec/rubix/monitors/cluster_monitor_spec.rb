@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'tempfile'
 
 describe Rubix::ClusterMonitor do
 

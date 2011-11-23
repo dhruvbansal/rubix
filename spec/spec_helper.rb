@@ -1,3 +1,4 @@
+require 'tempfile'
 require 'rspec'
 
 RUBIX_ROOT = File.expand_path(__FILE__, '../../lib')
@@ -12,6 +13,7 @@ RSpec.configure do |config|
   config.mock_with :rspec
   config.include Rubix::ResponseSpecs
   config.include Rubix::IntegrationHelper
+  config.include Rubix::ConfigliereHelper
 
   test_yml_path = File.expand_path('../test.yml', __FILE__)
   if File.exist?(test_yml_path)
