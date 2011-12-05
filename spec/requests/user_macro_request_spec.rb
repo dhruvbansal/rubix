@@ -1,43 +1,49 @@
 require 'spec_helper'
 
-describe "CRUD for user macros" do
+describe "User Macros" do
 
   before do
-    @hg1 = Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1')
-    ensure_save(@hg1)
-    
-    @h1  = Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@hg1])
-    ensure_save(@h1)
+    integration_test
+    @host_group = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1'))
+    @host       = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group]))
   end
 
   after do
-    ensure_destroy(@h1, @hg1)
+    truncate_all_tables
   end
-  
-  it "should be able to create, update, and destroy a host" do
-    integration_test
-    
-    Rubix::UserMacro.find(:name => 'rubix_spec_macro_1', :host_id => @h1.id).should be_nil
-    
-    um1 = Rubix::UserMacro.new(:name => 'rubix_spec_macro_1', :value => 'rubix_spec_value_1', :host_id => @h1.id)
-    um1.save.should be_true
 
-    id = um1.id
-    id.should_not be_nil
+  describe "when not existing" do
 
-    ensure_destroy(um1) do
-      um2 = Rubix::UserMacro.find(:name => 'rubix_spec_macro_1', :host_id => @h1.id)
-      um2.should_not be_nil
-
-      um1.value = 'rubix_spec_value_2'
-      um1.save.should be_true
-
-      um2 = Rubix::UserMacro.find(:name => 'rubix_spec_macro_1', :host_id => @h1.id)
-      um2.should_not be_nil
-      um2.value.should == 'rubix_spec_value_2'
-
-      um1.destroy
-      Rubix::UserMacro.find(:name => 'rubix_spec_macro_1', :host_id => @h1.id).should be_nil
+    it "returns nil on find" do
+      Rubix::UserMacro.find(:name => 'rubix_spec_macro_1', :host_id => @host.id).should be_nil      
     end
+
+    it "can be created" do
+      um = Rubix::UserMacro.new(:name => 'rubix_spec_macro_1', :value => 'rubix_spec_value_1', :host_id => @host.id)
+      um.save.should be_true
+    end
+
+  end
+
+  describe "when existing" do
+
+    before do
+      @macro = ensure_save(Rubix::UserMacro.new(:name => 'rubix_spec_macro_1', :value => 'rubix_spec_value_1', :host_id => @host.id))
+    end
+
+    it "can have its value changed" do
+      @macro.value = 'rubix_spec_value_2'
+      @macro.save
+
+      new_macro = Rubix::UserMacro.find(:name => 'rubix_spec_macro_1', :host_id => @host.id)
+      new_macro.should_not be_nil
+      new_macro.value.should == 'rubix_spec_value_2'
+    end
+
+    it "can be destroyed" do
+      @macro.destroy
+      Rubix::UserMacro.find(:name => 'rubix_spec_macro_1', :host_id => @host.id).should be_nil
+    end
+    
   end
 end

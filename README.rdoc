@@ -175,14 +175,14 @@ Zabbix.  (Credentials and addresses for the Zabbix server and the
 Zabbix API can all be customized; see the <tt>--help</tt> option.)
 
   # Send one data point -- this is tab separated!
-  $ echo "foo.bar.baz	123" | zabbix_pipe --host='My Zabbix Host'
+  $ echo "foo.bar.baz	123" | zabbix_pipe --host='My Zabbix Host' --host_groups='My Zabbix Servers,Some Other Group'
   # Send a bunch of data points in a file
-  $ cat my_data.tsv | zabbix_pipe --host='My Zabbix Host'
+  $ cat my_data.tsv | zabbix_pipe --host='My Zabbix Host' --host_groups='My Zabbix Servers,Some Other Group'
 
 You can also pass the file directly:
 
   # Send a bunch of data points in a file
-  $ zabbix_pipe --host='My Zabbix Host' my_data.tsv
+  $ zabbix_pipe --host='My Zabbix Host' --host_groups='My Zabbix Servers,Some Other Group' my_data.tsv
 
 You can also listen from a named pipe.  This is useful on a
 "production" system in which many processes may want to simply and
@@ -190,7 +190,7 @@ easily write somewhere without worrying about what happens.
 
   # In the first terminal
   $ mkfifo /dev/zabbix
-  $ zabbix_pipe --pipe=/dev/zabbix --host='My Zabbix Host'
+  $ zabbix_pipe --pipe=/dev/zabbix --host='My Zabbix Host' --host_groups='My Zabbix Servers,Some Other Group'
 
   # In another terminal
   $ echo "foo.bar.baz	123" > /dev/zabbix
@@ -204,9 +204,9 @@ This simple block of JSON doesn't really add any power to
 +zabbix_pipe+.  What becomes more interesting is that we can wedge in
 data for *diffferent* hosts, items, &c. when using JSON input:
 
-  $ echo '{"host": "My first host", "data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
-  $ echo '{"host": "My second host", "data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
-  $ echo '{"host": "My third host", "data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
+  $ echo '{"host": "My first host", "host_groups": "My Zabbix Servers,Some Other Group", "data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
+  $ echo '{"host": "My second host", "host_groups": "My Zabbix Servers,Some Other Group", "data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
+  $ echo '{"host": "My third host", "host_groups": "My Zabbix Servers,Some Other Group", "data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
 
 Rubix will switch hosts on the fly.
 
@@ -331,9 +331,9 @@ Chef[http://www.opscode.com/chef/] and so Rubix comes with a
     def measure
       begin
         if Net::HTTP.get_response(uri).code.to_i == 200
-	  availability = 1
-	else
-	  availability = 0
+          availability = 1
+        else
+          availability = 0
 	end
       rescue => e
         availability = 0

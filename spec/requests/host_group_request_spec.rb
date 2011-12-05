@@ -1,31 +1,49 @@
 require 'spec_helper'
 
-describe "CRUD for host groups" do
+describe "HostGroups" do
 
-  it "should be able to create, update, and destroy a host group" do
+  before do
     integration_test
+  end
+
+  after do
+    truncate_all_tables
+  end
+
+  describe "when not existing" do
     
-    Rubix::HostGroup.find(:name => 'rubix_spec_host_group_1').should be_nil
+    it "returns nil on find" do
+      Rubix::HostGroup.find(:name => 'rubix_spec_host_group_1').should be_nil
+    end
+
+    it "can be created" do
+      hg = Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1')
+      hg.save.should be_true
+    end
     
-    hg1 = Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1')
-    hg1.save.should be_true
-    id = hg1.id
-    id.should_not be_nil
+  end
 
-    ensure_destroy(hg1) do
-      hg2 = Rubix::HostGroup.find(:name => 'rubix_spec_host_group_1')
-      hg2.should_not be_nil
-      hg2.name.should == 'rubix_spec_host_group_1'
-      
-      hg1.name = 'rubix_spec_host_group_2'
-      hg1.save.should be_true
+  describe "when existing" do
 
-      hg2 = Rubix::HostGroup.find(:name => 'rubix_spec_host_group_2')
-      hg2.should_not be_nil
-      hg2.name.should == 'rubix_spec_host_group_2'
+    before do
+      @hg = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1'))
+    end
+    
+    it "can be found" do
+      Rubix::HostGroup.find(:name => 'rubix_spec_host_group_1').should_not be_nil
+    end
 
-      hg1.destroy
-      Rubix::HostGroup.find(:id => id).should be_nil
+    it "can have its name changed" do
+      @hg.name = 'rubix_spec_host_group_2'
+      @hg.save
+      Rubix::HostGroup.find(:name => 'rubix_spec_host_group_1').should     be_nil
+      Rubix::HostGroup.find(:name => 'rubix_spec_host_group_2').should_not be_nil
+    end
+
+    it "can be destroyed" do
+      @hg.destroy
+      Rubix::HostGroup.find(:name => 'rubix_spec_host_group_1').should be_nil
     end
   end
+  
 end
