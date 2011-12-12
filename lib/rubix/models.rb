@@ -6,4 +6,5 @@ module Rubix
   autoload :Item,           'rubix/models/item'
   autoload :Application,    'rubix/models/application'
   autoload :UserMacro,      'rubix/models/user_macro'
+  autoload :Trigger,        'rubix/models/trigger'
 end
