@@ -13,14 +13,14 @@ module Rubix
       :average        => 3,
       :high           => 4,
       :disaster       => 5
-    }
-    PRIORITY_CODES = PRIORITY_NAMES.invert
+    }.freeze
+    PRIORITY_CODES = PRIORITY_NAMES.invert.freeze
 
     STATUS_NAMES = {
       :enabled  => 0,
       :disabled => 1
-    }
-    STATUS_CODES = STATUS_NAMES.invert
+    }.freeze
+    STATUS_CODES = STATUS_NAMES.invert.freeze
     
     attr_accessor :description, :url, :status, :priority, :comments
     attr_reader   :expression

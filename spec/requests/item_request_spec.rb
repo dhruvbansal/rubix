@@ -39,6 +39,7 @@ describe "Items" do
     it "can have its host, application, and properties updated" do
       @item.key          = 'rubix.spec2'
       @item.description  = 'rubix item description 2'
+      @item.type         = :external
       @item.value_type   = :unsigned_int
       @item.host_id      = @host_2.id
       @item.applications = [@app_2]
@@ -48,6 +49,8 @@ describe "Items" do
 
       new_item = Rubix::Item.find(:key => 'rubix.spec2', :host_id => @host_2.id)
       new_item.should_not be_nil
+      new_item.value_type.should == :unsigned_int
+      new_item.type.should       == :external
       new_item.host.name.should == @host_2.name
       new_item.applications.map(&:name).should include(@app_2.name)
     end

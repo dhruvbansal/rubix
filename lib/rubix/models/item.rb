@@ -6,10 +6,29 @@ module Rubix
     # == Properties & Finding ==
     #
 
-    # The numeric code for a Zabbix item of type 'Zabbix trapper'.  The
-    # item must have this type in order for the Zabbix server to listen
-    # and accept data submitted by +zabbix_sender+.
-    TRAPPER_TYPE = 2.freeze
+    # The numeric codes for the various item types.
+    #
+    # Items without a type will be set to 'trapper' so they can be
+    # easily written to manually.
+    TYPE_CODES = {
+      :zabbix     => 0,
+      :snmpv1     => 1,
+      :trapper    => 2,
+      :simple     => 3,
+      :snmpv2c    => 4,
+      :internal   => 5,
+      :snmpv3     => 6,
+      :active     => 7,
+      :aggregate  => 8,
+      :httptest   => 9,
+      :external   => 10,
+      :db_monitor => 11,
+      :ipmi       => 12,
+      :ssh        => 13,
+      :telnet     => 14,
+      :calculated => 15
+    }.freeze
+    TYPE_NAMES = TYPE_CODES.invert.freeze
 
     # The numeric codes for the value types of a Zabbix item.  This Hash
     # is used by ZabbixPipe#value_code_from_value to dynamically set the
@@ -21,14 +40,7 @@ module Rubix
       :unsigned_int => 3,         # Numeric (unsigned)
       :text         => 4          # Text
     }.freeze
-
-    VALUE_NAMES = {
-      0 => :float,              # Numeric (float)
-      1 => :character,          # Character
-      2 => :log_line,           # Log
-      3 => :unsigned_int,       # Numeric (unsigned)
-      4 => :text                # Text
-    }.freeze
+    VALUE_NAMES = VALUE_CODES.invert.freeze
 
     # Return the +value_type+ name (:float, :text, &c.) for a Zabbix
     # item's value type by examining the given +value+.
@@ -48,17 +60,22 @@ module Rubix
     end
     
     attr_accessor :key, :description
-    attr_reader :value_type
+    attr_writer :type, :value_type
     
     def initialize properties={}
       super(properties)
       @key            = properties[:key]
       @description    = properties[:description]
+      @type           = properties[:type]
       
       self.value_type = properties[:value_type]
 
       self.host            = properties[:host]
       self.host_id         = properties[:host_id]
+
+      self.template        = properties[:template]
+      self.template_id     = properties[:template_id]
+      
       self.applications    = properties[:applications]
       self.application_ids = properties[:application_ids]
     end
@@ -67,12 +84,12 @@ module Rubix
       "#{self.class.resource_name} #{self.key || self.id}"
     end
 
-    def value_type= vt
-      if vt.nil? || vt.to_s.empty? || !self.class::VALUE_CODES.include?(vt.to_sym)
-        @value_type = :character
-      else
-        @value_type = vt.to_sym
-      end
+    def value_type
+      @value_type ||= :character
+    end
+
+    def type
+      @type ||= :trapper
     end
 
     #
@@ -80,6 +97,7 @@ module Rubix
     #
 
     include Associations::BelongsToHost
+    include Associations::BelongsToTemplate
     include Associations::HasManyApplications
 
     #
@@ -90,7 +108,7 @@ module Rubix
       {
         :hostid       => host_id,
         :description  => (description || 'Unknown'),
-        :type         => self.class::TRAPPER_TYPE,
+        :type         => self.class::TYPE_CODES[type],
         :key_         => key,
         :value_type   => self.class::VALUE_CODES[value_type],
       }.tap do |p|
@@ -117,7 +135,8 @@ module Rubix
             :id              => item[id_field].to_i,
             :host_id         => item['hostid'].to_i,
             :description     => item['description'],
-            :value_type      => item['value_type'] ? self::VALUE_NAMES[item['value_type'].to_i] : :character,
+            :type            => TYPE_NAMES[item['type'].to_i],
+            :value_type      => VALUE_NAMES[item['value_type'].to_i],
             :application_ids => (item['applications'] || []).map { |app| app['applicationid'].to_i },
             :key             => item['key_']
           })
