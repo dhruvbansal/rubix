@@ -93,14 +93,14 @@ module Rubix
     #
     # @return [Array<Rubix::HostGroup>]
     def initialize_host_groups
-      self.host_groups = settings['host_groups'].split(',').flatten.compact.map { |group_name | HostGroup.find_or_create(:name => group_name.strip) }
+      self.host_groups = settings['host_groups'].split(',').flatten.compact.map(&:strip).uniq.map { |group_name | HostGroup.find_or_create(:name => group_name.strip) }
     end
 
     # Find necessary templates.
     #
     # @return [Array<Rubix::Template>]
     def initialize_templates
-      self.templates = (settings['templates'] || '').split(',').flatten.compact.map { |template_name | Template.find(:name => template_name.strip) }.compact
+      self.templates = (settings['templates'] || '').split(',').flatten.compact.map(&:strip).uniq.map { |template_name | Template.find(:name => template_name.strip) }.compact
     end
 
     # Find or create the host for this data.  Host groups and
@@ -119,7 +119,7 @@ module Rubix
     #
     # @return [Array<Rubix::Application>]
     def initialize_applications
-      application_names = (settings['applications'] || '').split(',').flatten.compact
+      application_names = (settings['applications'] || '').split(',').flatten.compact.map(&:strip).uniq
       self.applications = []
       application_names.each do |app_name|
         app = Application.find(:name => app_name, :host_id => host.id)
