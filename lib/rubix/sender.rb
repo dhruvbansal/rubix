@@ -109,8 +109,22 @@ module Rubix
     # @return [Rubix::Host]
     def initialize_host
       self.host = (Host.find(:name => settings['host']) || Host.new(:name => settings['host']))
-      host.host_groups = ((host.host_groups || []) + host_groups).flatten.compact.uniq
-      host.templates   = ((host.templates || []) + templates).flatten.compact.uniq
+
+      current_host_group_names = (host.host_groups || []).map(&:name)
+      current_template_names   = (host.templates || []).map(&:name)
+
+      host_groups_to_add, templates_to_add = [], []
+
+      (self.host_groups || []).each do |hg|
+        host_groups_to_add << hg unless current_host_group_names.include?(hg.name)
+      end
+
+      (self.templates || []).each do |t|
+        templates_to_add << t unless current_template_names.include?(t.name)
+      end
+
+      host.host_groups = ((host.host_groups || []) + host_groups_to_add).flatten.compact.uniq
+      host.templates   = ((host.templates || []) + templates_to_add).flatten.compact.uniq
       host.save
       host
     end
