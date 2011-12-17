@@ -70,5 +70,5 @@ module Rubix
   # from being saved by the Zabbix API (i.e. - no host group for a
   # host).
   ValidationError     = Class.new(Error)
-  
+
 end

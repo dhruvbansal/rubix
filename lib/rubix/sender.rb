@@ -39,7 +39,7 @@ module Rubix
 
     # @return [Array<Rubix::Application>] The applications used to create items
     attr_accessor :applications
-    
+
     #
     # == Initialization ==
     #
@@ -81,7 +81,7 @@ module Rubix
     end
 
     # Will this sender auto-vivify hosts, groups, items, &c.?
-    # 
+    #
     # @return [true, false]
     def auto_vivify?
       !fast?
@@ -147,9 +147,9 @@ module Rubix
     end
 
     public
-    
+
     #
-    # == Sending Data == 
+    # == Sending Data ==
     #
 
     # Run this sender.
@@ -171,7 +171,7 @@ module Rubix
     end
 
     protected
-    
+
     # Process each line of a file.
     #
     # @param [String] path the path to the file to process
@@ -180,12 +180,12 @@ module Rubix
       process_file_handle(f)
       f.close
     end
-    
+
     # Process each line of standard input.
     def process_stdin
       process_file_handle($stdin)
     end
-    
+
     # Process each line read from the pipe.
     #
     # The pipe will be opened in a non-blocking read mode.  This
@@ -205,7 +205,7 @@ module Rubix
       end
       f.close
     end
-    
+
     # Process each line of a given file handle.
     #
     # @param [File] f the file to process
@@ -229,7 +229,7 @@ module Rubix
     end
 
     public
-    
+
     # Process a single line of text.
     #
     # @param [String] line
@@ -289,7 +289,7 @@ module Rubix
     #   }
     #
     # Or when sending for another host:
-    # 
+    #
     #   {
     #     'host': 'shazaam',
     #     'applications': 'silly',
@@ -307,7 +307,7 @@ module Rubix
         error("Malformed JSON")
         return
       end
-      
+
       data = json.delete('data')
       unless data && data.is_a?(Array)
         error("A line of JSON input must a have an Array key 'data'")
@@ -336,7 +336,7 @@ module Rubix
           warn("The elements of the 'data' Array must be Hashes with a 'key' and a 'value'")
           next
         end
-        
+
         tsv_line = [key, value].map(&:to_s).join("\t")
         daughter_pipe.process_line(tsv_line)
       end
@@ -382,7 +382,7 @@ module Rubix
       item = Item.find(:key => key, :host_id => host.id)
       unless item
         Item.new(:key => key, :host_id => host.id, :applications => applications, :value_type => Item.value_type_from_value(value)).save
-        
+
         # There is a time lag of about 15-30 seconds between (successfully)
         # creating an item on the Zabbix server and having the Zabbix accept
         # new data for that item.
@@ -398,7 +398,7 @@ module Rubix
         sleep settings['create_item_sleep']
       end
     end
-    
+
     # Parse the +text+ output by +zabbix_sender+.
     #
     # @param [String] key

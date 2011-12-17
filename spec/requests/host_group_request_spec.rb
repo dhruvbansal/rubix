@@ -11,7 +11,7 @@ describe "HostGroups" do
   end
 
   describe "when not existing" do
-    
+
     it "returns nil on find" do
       Rubix::HostGroup.find(:name => 'rubix_spec_host_group_1').should be_nil
     end
@@ -20,7 +20,7 @@ describe "HostGroups" do
       hg = Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1')
       hg.save.should be_true
     end
-    
+
   end
 
   describe "when existing" do
@@ -28,7 +28,7 @@ describe "HostGroups" do
     before do
       @hg = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1'))
     end
-    
+
     it "can be found" do
       Rubix::HostGroup.find(:name => 'rubix_spec_host_group_1').should_not be_nil
     end
@@ -45,5 +45,5 @@ describe "HostGroups" do
       Rubix::HostGroup.find(:name => 'rubix_spec_host_group_1').should be_nil
     end
   end
-  
+
 end

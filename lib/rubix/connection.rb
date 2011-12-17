@@ -32,7 +32,7 @@ module Rubix
 
     # @return [Rubix::Response] the last response from the Zabbix API -- useful for logging purposes
     attr_reader :last_response
-    
+
     # Set up a connection to a Zabbix API.
     #
     # The +uri_or_string+ can be either a string or a <tt>URI</tt>
@@ -76,7 +76,7 @@ module Rubix
         send_raw_request(raw_params)
       end
     end
-    
+
     # Has this connection already been authorized and provided with a
     # authorization token from the Zabbix API?
     def authorized?
@@ -162,7 +162,7 @@ module Rubix
       end
       raw_response
     end
-    
+
     # Generate the raw POST request to send to the Zabbix API
     #
     # @param [Hash, #to_json] raw_params the complete parameters of the request.

@@ -22,7 +22,7 @@ describe "Templates" do
       template = Rubix::Template.new(:name => 'rubix_spec_template_1', :host_groups => [@host_group_1])
       template.save.should be_true
     end
-    
+
   end
 
   describe "when existing" do
@@ -42,11 +42,11 @@ describe "Templates" do
       @template.destroy
       Rubix::Template.find(:name => 'rubix_spec_template_1').should be_nil
     end
-    
+
   end
 
   it "should be able to import and export a template" do
     pending "Learning how to import/export XML via the API"
   end
-  
+
 end

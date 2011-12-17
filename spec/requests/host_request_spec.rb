@@ -43,7 +43,7 @@ describe "Hosts" do
     it "can change its host groups" do
       @host.host_groups = [@host_group_1, @host_group_2]
       @host.save
-      
+
       new_host = Rubix::Host.find(:name => 'rubix_spec_host_1')
       new_host.should_not be_nil
       new_host.host_groups.size.should == 2
@@ -53,7 +53,7 @@ describe "Hosts" do
     it "can change its templates" do
       @host.templates = [@template_1, @template_2]
       @host.save
-      
+
       new_host = Rubix::Host.find(:name => 'rubix_spec_host_1')
       new_host.should_not be_nil
       new_host.templates.size.should == 2

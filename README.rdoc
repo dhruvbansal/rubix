@@ -23,8 +23,8 @@ few goals:
   on Ruby 1.8 standard library & +JSON+ and scripts additionally
   depend on +Configliere+[http://github.com/mrflip/configliere].
 
-- Play nicely with Chef[http://www.opscode.com/chef/]  
-  
+- Play nicely with Chef[http://www.opscode.com/chef/]
+
 There are a lot of other projects out there that connect Ruby to
 Zabbix.  Here's a quick list:
 
@@ -33,23 +33,23 @@ zabbix[http://github.com/lorieri/zabbix]::
 
 zabbixapi[http://github.com/verm666/zabbixapi]::
   Ruby module for work with zabbix api
-  
+
 zabbix-rb[http://github.com/mhat/zabbix-rb]::
   send data to zabbix from ruby
-  
+
 zabbix_pusher[http://github.com/iteh/zabbix_pusher]::
   zabbix_pusher is a gem to parse zabbix templates and push the data
   to the corresponding zabbix server
 
 zabbix-trappers[http://github.com/vzctl/zabbix-trappers]::
   Collection of ruby scripts for zabbix trappers
-  
+
 rzabbix[http://github.com/neerfri/rzabbix]::
   Zabbix API client for Ruby
 
 zabboard[http://github.com/yammer/zabboard]::
   zabbix analytics
-  
+
 zabbix-web[http://github.com/legiar/zabbix-web]::
   Zabbix frontend
 
@@ -104,7 +104,7 @@ quietly for you:
     # Response was an error.  Uh oh!
     puts response.error_message
   end
-  
+
 === On the command line
 
 Rubix comes with a command line utility +zabbix_api+ which lets you
@@ -133,7 +133,7 @@ complete with host groups, templates, applications, and so on.
   # Now the template -- created templates are empty by default!
   template = Rubix::Template.new(:name => "Template_Some_Service")
   template.save
-  
+
   # Now the host.
   host = Rubix::Host.new(:name => "My Host", :ip => '123.123.123.123', :templates => [template], :host_groups => [host_group])
   host.save
@@ -317,7 +317,7 @@ Chef[http://www.opscode.com/chef/] and so Rubix comes with a
   require 'rubix'
   require 'net/http'
   require 'uri'
-  
+
   class WebserverMonitor < Rubix::ChefMonitor
 
     def webserver
@@ -327,7 +327,7 @@ Chef[http://www.opscode.com/chef/] and so Rubix comes with a
     def uri
       URI.parse("http://#{webserver['ec2']['public_hostname']}")
     end
-  
+
     def measure
       begin
         if Net::HTTP.get_response(uri).code.to_i == 200

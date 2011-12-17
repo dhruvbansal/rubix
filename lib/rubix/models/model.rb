@@ -16,7 +16,7 @@ module Rubix
     include Logs
 
     #
-    # == Identifiers == 
+    # == Identifiers ==
     #
 
     # This is the name of the resource as used inside Rubix -- Host,
@@ -34,7 +34,7 @@ module Rubix
     def resource_name
       "#{self.class.resource_name} #{respond_to?(:name) ? self.name : self.id}"
     end
-    
+
     # This is the name of the resource as used by Zabbix -- host,
     # hostgroup, usermacro, &c.
     #
@@ -203,7 +203,7 @@ module Rubix
     end
 
     #
-    # == Destroy == 
+    # == Destroy ==
     #
 
     # Parameters for destroying this resource.
@@ -249,9 +249,9 @@ module Rubix
     def before_destroy
       true
     end
-    
+
     #
-    # == Index == 
+    # == Index ==
     #
 
     # Parameters for 'get'-type requests for this resource's type.
@@ -281,7 +281,7 @@ module Rubix
     #
     # @param [Hash] options options for filtering the list of all resources.
     # @return [Array<Rubix::Model>]
-    def self.all options={} 
+    def self.all options={}
       response = all_request(options)
       if response.has_data?
         response.result.map { |obj_data| build(obj_data) }
@@ -300,7 +300,7 @@ module Rubix
     end
 
     #
-    # == Show == 
+    # == Show ==
     #
 
     # Parameters for finding a specific resource.
@@ -312,7 +312,7 @@ module Rubix
     end
 
     # Send a find request for a specific resource.
-    # 
+    #
     # @param [Hash] options specify properties about the object to find
     # @return [Rubix::Response]
     def self.find_request options={}

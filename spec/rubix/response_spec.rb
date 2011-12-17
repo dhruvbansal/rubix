@@ -32,4 +32,4 @@ describe Rubix::Response do
   end
 
 end
-  
+

@@ -15,7 +15,7 @@ describe "User Macros" do
   describe "when not existing" do
 
     it "returns nil on find" do
-      Rubix::UserMacro.find(:name => 'rubix_spec_macro_1', :host_id => @host.id).should be_nil      
+      Rubix::UserMacro.find(:name => 'rubix_spec_macro_1', :host_id => @host.id).should be_nil
     end
 
     it "can be created" do
@@ -44,6 +44,6 @@ describe "User Macros" do
       @macro.destroy
       Rubix::UserMacro.find(:name => 'rubix_spec_macro_1', :host_id => @host.id).should be_nil
     end
-    
+
   end
 end

@@ -1,5 +1,5 @@
 module Rubix
-  
+
   class Trigger < Model
 
     #
@@ -21,10 +21,10 @@ module Rubix
       :disabled => 1
     }.freeze
     STATUS_CODES = STATUS_NAMES.invert.freeze
-    
+
     attr_accessor :description, :url, :status, :priority, :comments
     attr_reader   :expression
-    
+
     def initialize properties={}
       super(properties)
       @description = properties[:description]
@@ -34,13 +34,13 @@ module Rubix
       @comments    = properties[:comments]
 
       self.expression  = properties[:expression]
-      
+
       self.host     = properties[:host]
       self.template = properties[:template]
-      
+
       self.template_id = properties[:template_id]
       self.host_id = properties[:host_id]
-      
+
       self.items    = properties[:items]
       self.item_ids = properties[:item_ids]
     end
@@ -69,9 +69,9 @@ module Rubix
     include Associations::HasManyItems
 
     #
-    # == Requests == 
+    # == Requests ==
     #
-    
+
     def create_params
       {
         :templateid   => (template_id || host_id),
@@ -87,7 +87,7 @@ module Rubix
     def self.get_params
       super().merge(:select_items => :refer)
     end
-    
+
     def self.find_params options={}
       fp = {
         :filter => {
@@ -128,6 +128,6 @@ module Rubix
         {}
       end
     end
-    
+
   end
 end

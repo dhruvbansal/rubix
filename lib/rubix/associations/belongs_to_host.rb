@@ -30,4 +30,4 @@ module Rubix
   end
 end
 
-      
+

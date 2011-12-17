@@ -1,5 +1,5 @@
 module Rubix
-  
+
   class HostGroup < Model
 
     #
@@ -9,22 +9,22 @@ module Rubix
     def initialize properties={}
       super(properties)
       @name     = properties[:name]
-      
+
       self.host_ids = properties[:host_ids]
       self.hosts    = properties[:hosts]
     end
-    
+
     attr_accessor :name
 
-    
+
     def self.id_field
       'groupid'
     end
-    
+
     #
     # == Associations ==
     #
-    
+
     include Associations::HasManyHosts
 
     #
@@ -54,6 +54,6 @@ module Rubix
             :host_ids => host_group['hosts'].map { |host_info| host_info['hostid'].to_i }
           })
     end
-    
+
   end
 end

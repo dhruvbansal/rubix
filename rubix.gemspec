@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'mysql2'
-  
+
   s.add_dependency 'json'
   s.add_dependency 'configliere', '>= 0.4.8'
 end

@@ -1,13 +1,13 @@
 module Rubix
   module Associations
     module HasManyUserMacros
-      
+
       def user_macros= hs
         return unless hs
         @user_macros    = hs
         @user_macro_ids = hs.map(&:id)
       end
-      
+
       def user_macros
         return @user_macros if @user_macros
         return unless @user_macro_ids
@@ -18,7 +18,7 @@ module Rubix
         return unless umids
         @user_macro_ids = umids
       end
-      
+
       def user_macro_ids
         return @user_macro_ids if @user_macro_ids
         return unless @user_macros
@@ -29,9 +29,9 @@ module Rubix
         return [] unless user_macros
         user_macros.map { |um| { 'macro' => um.macro_name, 'value' => um.value } }
       end
-      
+
     end
   end
 end
 
-      
+

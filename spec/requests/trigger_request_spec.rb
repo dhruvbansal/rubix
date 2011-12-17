@@ -5,12 +5,12 @@ describe "Triggers" do
   before do
     integration_test
     @host_group      = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1'))
-    
+
     @template_1      = ensure_save(Rubix::Template.new(:name => 'rubix_spec_template_1', :host_groups => [@host_group]))
     @template_2      = ensure_save(Rubix::Template.new(:name => 'rubix_spec_template_2', :host_groups => [@host_group]))
     @template_item_1 = ensure_save(Rubix::Item.new(:key => 'rubix.spec1', :description => 'rubix template item description 1', :host_id => @template_1.id, :value_type => :character))
     @template_item_2 = ensure_save(Rubix::Item.new(:key => 'rubix.spec2', :description => 'rubix template item description 2', :host_id => @template_2.id, :value_type => :character))
-    
+
     @host_1          = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group]))
     @host_2          = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_2', :host_groups => [@host_group]))
     @host_item_1     = ensure_save(Rubix::Item.new(:key => 'rubix.spec1', :description => 'rubix host item description 1', :host_id => @host_1.id, :value_type => :character))
@@ -39,7 +39,7 @@ describe "Triggers" do
       trigger.save.should be_true
       trigger.host.name.should == @host_1.name
     end
-    
+
   end
 
   describe "when existing on a template" do
@@ -94,6 +94,6 @@ describe "Triggers" do
       Rubix::Trigger.find(:description => 'rubix host trigger description 1', :host_id => @host_1.id).should be_nil
     end
   end
-  
+
 end
-    
+

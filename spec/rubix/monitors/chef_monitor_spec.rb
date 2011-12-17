@@ -7,4 +7,4 @@ describe Rubix::ChefMonitor do
   end
 
 end
-  
+

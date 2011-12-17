@@ -1,5 +1,5 @@
 module Rubix
-  
+
   class Template < Model
 
     #
@@ -7,11 +7,11 @@ module Rubix
     #
 
     attr_accessor :name
-    
+
     def initialize properties={}
       super(properties)
       @name     = properties[:name]
-      
+
       self.host_ids = properties[:host_ids]
       self.hosts    = properties[:hosts]
 
@@ -27,7 +27,7 @@ module Rubix
       raise ValidationError.new("A template must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
       true
     end
-    
+
     #
     # == Associations ==
     #
@@ -38,11 +38,11 @@ module Rubix
     #
     # == CRUD ==
     #
-    
+
     def create_params
       {:host => name, :groups => host_group_params}
     end
-    
+
     def update_params
       [create_params.merge(id_field => id)]
     end
@@ -67,6 +67,6 @@ module Rubix
             :host_group_ids => template['groups'].map { |group| group['groupid'].to_i }
           })
     end
-    
+
   end
 end

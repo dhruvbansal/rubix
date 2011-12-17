@@ -47,7 +47,7 @@ module Rubix
     def self.default_settings
       Configliere::Param.new.tap do |s|
         s.use :commandline
-        
+
         s.define :loop,            :description => "Run every this many seconds",          :required => false, :type => Integer
       end
     end
@@ -73,7 +73,7 @@ module Rubix
     def initialize settings
       @settings = settings
     end
-    
+
     def loop?
       loop_period > 0
     end
@@ -105,7 +105,7 @@ module Rubix
     #
     # Methods for writing data to Zabbix.
     #
-    
+
     def write options={}, &block
       return unless output
       data = []
@@ -139,7 +139,7 @@ module Rubix
     def fifo?
       !stdout? && File.exist?(output_path) && File.ftype(output_path) == 'fifo'
     end
-    
+
     def output
       return @output if @output
       case
