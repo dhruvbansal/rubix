@@ -1,13 +1,13 @@
 module Rubix
-  
+
   class UserMacro < Model
 
     #
     # == Properties & Finding ==
     #
-    
+
     attr_accessor :value
-    
+
     def initialize properties={}
       super(properties)
       self.name  = properties[:name] || self.class.unmacro_name(properties[:macro])
@@ -35,7 +35,7 @@ module Rubix
     def macro_name
       self.class.macro_name(name)
     end
-    
+
     def self.id_field
       'hostmacroid'
     end
@@ -47,18 +47,18 @@ module Rubix
     #
     # == Associations ==
     #
-    
+
     include Associations::BelongsToHost
 
     #
     # == Validation ==
     #
-    
+
     def validate
       raise ValidationError.new("A user macro must have both a 'name' and a 'value'") if name.nil? || name.strip.empty? || value.nil? || value.strip.empty?
       true
     end
-    
+
     #
     # == Requests ==
     #
@@ -66,11 +66,11 @@ module Rubix
     def mass_add_params
       { :macros => [{:macro => macro_name, :value => value}], :hosts => [{:hostid => host_id}] }
     end
-    
+
     def create_request
       request('usermacro.massAdd', mass_add_params)
     end
-    
+
     def update_request
       request('usermacro.massUpdate', mass_add_params)
     end
@@ -96,6 +96,6 @@ module Rubix
             :host_id => macro['hostid']
           })
     end
-    
+
   end
 end

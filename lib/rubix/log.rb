@@ -45,7 +45,7 @@ module Rubix
     else
       severity_name = 'info'
     end
-    
+
     begin
       return Logger.const_get(severity_name.upcase)
     rescue NameError => e
@@ -117,6 +117,6 @@ module Rubix
       return unless Rubix.logger
       Rubix.logger.log(Logger::FATAL, args.join(' '))
     end
-    
+
   end
 end

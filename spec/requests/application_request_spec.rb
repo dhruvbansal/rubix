@@ -42,6 +42,6 @@ describe "Applications" do
       @app.destroy
       Rubix::Application.find(:name => 'rubix_spec_app_1', :host_id => @host.id).should be_nil
     end
-    
+
   end
 end

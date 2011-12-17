@@ -27,7 +27,7 @@ describe "Items" do
       item.host.name.should == @host_1.name
       item.applications.map(&:name).should include(@app_1.name)
     end
-    
+
   end
 
   describe "when existing" do
@@ -61,4 +61,4 @@ describe "Items" do
     end
   end
 end
-    
+

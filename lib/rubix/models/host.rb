@@ -5,16 +5,16 @@ module Rubix
     #
     # == Properties & Finding ==
     #
-    
+
     # The IP for a Host that not supposed to be polled by the Zabbix
     # server.
     BLANK_IP = '0.0.0.0'
 
     # The default port.
     DEFAULT_PORT = 10050
-    
+
     attr_accessor :name, :ip, :port, :profile, :status
-    
+
     def initialize properties={}
       super(properties)
       @name        = properties[:name]
@@ -34,7 +34,7 @@ module Rubix
     end
 
     #
-    # == Associations == 
+    # == Associations ==
     #
 
     include Associations::HasManyHostGroups
@@ -42,14 +42,14 @@ module Rubix
     include Associations::HasManyUserMacros
 
     #
-    # == Validation == 
+    # == Validation ==
     #
 
     def validate
       raise ValidationError.new("A host must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
       true
     end
-    
+
     #
     # == Requests ==
     #
@@ -63,7 +63,7 @@ module Rubix
       }.tap do |hp|
         hp[:profile] = profile if profile
         hp[:status]  = status  if status
-        
+
         if ip
           hp[:ip]      = ip
           hp[:useip]   = true
@@ -73,7 +73,7 @@ module Rubix
         end
       end
     end
-    
+
     def update_params
       create_params.tap do |cp|
         cp.delete(:groups)
@@ -92,7 +92,7 @@ module Rubix
         false
       end
     end
-    
+
     def destroy_params
       [{id_field => id}]
     end
@@ -113,7 +113,7 @@ module Rubix
             :port           => host['port']
           })
     end
-    
+
     def self.get_params
       super().merge({:select_groups => :refer, :selectParentTemplates => :refer, :select_profile => :refer, :select_macros => :extend})
     end
@@ -121,6 +121,6 @@ module Rubix
     def self.find_params options={}
       get_params.merge(:filter => {:host => options[:name], id_field => options[:id]})
     end
-    
+
   end
 end

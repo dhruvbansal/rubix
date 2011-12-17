@@ -25,7 +25,7 @@ module Rubix
     end
 
     #
-    # == Parsing == 
+    # == Parsing ==
     #
 
     # The parsed JSON body.
@@ -45,7 +45,7 @@ module Rubix
     end
 
     #
-    # == Error Handling == 
+    # == Error Handling ==
     #
 
     # Was the response *not* a 200?
@@ -74,7 +74,7 @@ module Rubix
     def success?
       !error?
     end
-    
+
     # Was the response a *Zabbix* error, implying a 200 with an
     # +error+ key.
     #
@@ -119,7 +119,7 @@ module Rubix
     end
 
     #
-    # == Inspecting contents == 
+    # == Inspecting contents ==
     #
 
     # The contents of the +result+ key.  Returns +nil+ if an error.
@@ -169,7 +169,7 @@ module Rubix
 
     # Is the contents of the *first* element of the +result+ key an
     # Array?
-    # 
+    #
     # @return [true, false]
     def array?
       return false if error?
@@ -177,7 +177,7 @@ module Rubix
     end
 
     # Is the contents of the +result+ key a String?
-    # 
+    #
     # @return [true, false]
     def string?
       return false if error?
@@ -191,6 +191,6 @@ module Rubix
       return false if error?
       result == true || result == false
     end
-    
+
   end
 end

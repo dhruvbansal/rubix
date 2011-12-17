@@ -5,7 +5,7 @@ describe Rubix::Monitor do
 
   before do
     @measurement = '{"data":[{"value":"bar","key":"foo"}]}'
-    
+
     @wrapper = Class.new(Rubix::Monitor)
     @wrapper.class_eval do
       def measure
@@ -34,10 +34,10 @@ describe Rubix::Monitor do
   end
 
   describe 'writing to files' do
-    
+
     before do
       @file = Tempfile.new('monitor', '/tmp')
-      ::ARGV.replace([@file.path])      
+      ::ARGV.replace([@file.path])
     end
 
     after do
@@ -59,12 +59,12 @@ describe Rubix::Monitor do
   end
 
   describe 'writing to FIFOs' do
-    
+
     before do
       @file = Tempfile.new('monitor', '/tmp')
       FileUtils.rm(@file.path) if File.exist?(@file.path)
       `mkfifo #{@file.path}`
-      ::ARGV.replace([@file.path])      
+      ::ARGV.replace([@file.path])
     end
 
     after do
@@ -76,6 +76,6 @@ describe Rubix::Monitor do
     end
 
   end
-  
+
 end
-  
+

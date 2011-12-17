@@ -12,11 +12,11 @@ module Rubix
   #
   #   #!/usr/bin/env ruby
   #   # in webserver_monitor
-  #   
+  #
   #   require 'net/http'
-  #   
+  #
   #   class WebserverMonitor < Rubix::ChefMonitor
-  #   
+  #
   #     def measure
   #       webserver = chef_node_from_node_name('webserver')
   #       begin
@@ -33,7 +33,7 @@ module Rubix
   #       end
   #     end
   #   end
-  #   
+  #
   #   WebserverMonitor.run if $0 == __FILE__
   #
   # See documentation for Rubix::Monitor to understand how to run this
@@ -47,7 +47,7 @@ module Rubix
         s.define :chef_client_key, :description => "Path to Chef client private key",      :required => true
       end
     end
-    
+
     def initialize settings
       super(settings)
       set_chef_credentials
@@ -77,6 +77,6 @@ module Rubix
       return unless results.first.size > 0
       results.first.first['node_name']
     end
-    
+
   end
 end

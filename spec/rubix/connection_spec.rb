@@ -3,20 +3,20 @@ require 'spec_helper'
 describe Rubix::Connection do
 
   before do
-    
+
     @mock_server   = mock("Net::HTTP instance")
     Net::HTTP.stub!(:new).and_return(@mock_server)
-    
+
     @mock_response = mock("Net::HTTP::Response instance")
     @mock_server.stub!(:request).and_return(@mock_response)
     @mock_response.stub!(:code).and_return('200')
-    
+
 
     @good_auth_response = '{"result": "auth_token"}'
     @blah_response      = '{"result": "bar"}'
 
     @mock_response.stub!(:body).and_return(@blah_response)
-    
+
     @connection = Rubix::Connection.new('localhost/api.php', 'username', 'password')
   end
 
@@ -40,4 +40,4 @@ describe Rubix::Connection do
   end
 
 end
-  
+

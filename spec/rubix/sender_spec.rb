@@ -18,6 +18,6 @@ describe Rubix::Sender do
 
   describe "running in auto-vivify mode" do
   end
-  
+
 end
-  
+

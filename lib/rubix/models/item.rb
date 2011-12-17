@@ -1,5 +1,5 @@
 module Rubix
-  
+
   class Item < Model
 
     #
@@ -58,16 +58,16 @@ module Rubix
     def self.value_code_from_value value
       self::VALUE_CODES[value_type_from_value(value)]
     end
-    
+
     attr_accessor :key, :description
     attr_writer :type, :value_type
-    
+
     def initialize properties={}
       super(properties)
       @key            = properties[:key]
       @description    = properties[:description]
       @type           = properties[:type]
-      
+
       self.value_type = properties[:value_type]
 
       self.host            = properties[:host]
@@ -75,7 +75,7 @@ module Rubix
 
       self.template        = properties[:template]
       self.template_id     = properties[:template_id]
-      
+
       self.applications    = properties[:applications]
       self.application_ids = properties[:application_ids]
     end
@@ -101,9 +101,9 @@ module Rubix
     include Associations::HasManyApplications
 
     #
-    # == Requests == 
+    # == Requests ==
     #
-    
+
     def create_params
       {
         :hostid       => host_id,
@@ -119,7 +119,7 @@ module Rubix
     def self.get_params
       super().merge(:select_applications => :refer)
     end
-    
+
     def self.find_params options={}
       super().merge({
                       :hostids => [options[:host_id]],
@@ -141,6 +141,6 @@ module Rubix
             :key             => item['key_']
           })
     end
-    
+
   end
 end

@@ -1,5 +1,5 @@
 module Rubix
-  
+
   # A generic monitor class for constructing Zabbix monitors that
   # monitor whole clusters.
   #
@@ -14,13 +14,13 @@ module Rubix
   #
   #   #!/usr/bin/env ruby
   #   # in cluster_uptime_monitor
-  #   
+  #
   #   class ClusterUptimeMonitor < Rubix::ClusterMonitor
-  #   
+  #
   #     def node_query
   #       'role:nginx'
   #     end
-  #     
+  #
   #     def measure_cluster cluster_name
   #       total_seconds = nodes_by_cluster[cluster_name].inject(0.0) do |sum, node|
   #         sum += node['uptime_seconds']
@@ -31,7 +31,7 @@ module Rubix
   #       end
   #     end
   #   end
-  #   
+  #
   #   ClusterUptimeMonitor.run if $0 == __FILE__
   #
   # See documentation for Rubix::Monitor to understand how to run this
@@ -59,16 +59,16 @@ module Rubix
       matching_chef_nodes.first.each do |node|
         @nodes_by_cluster[node['cluster_name']] ||= []
         @nodes_by_cluster[node['cluster_name']] << node
-        
+
         @private_ips_by_cluster[node['cluster_name']] ||= []
         @private_ips_by_cluster[node['cluster_name']] << node['ipaddress']
       end
     end
-    
+
     def clusters
       private_ips_by_cluster.keys
     end
-    
+
     def measure
       clusters.each do |cluster_name|
         measure_cluster(cluster_name)
@@ -78,7 +78,7 @@ module Rubix
     def measure_cluster cluster_name
       raise NotImplementedError.new("Override the 'measure_cluster' method to make measurements of a given cluster.")
     end
-    
+
   end
 
 end

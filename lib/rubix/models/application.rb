@@ -1,5 +1,5 @@
 module Rubix
-  
+
   class Application < Model
 
     #
@@ -9,11 +9,11 @@ module Rubix
     def initialize properties={}
       super(properties)
       @name    = properties[:name]
-      
+
       self.host_id = properties[:host_id]
       self.host    = properties[:host]
     end
-    
+
     attr_accessor :name
 
     #
@@ -23,9 +23,9 @@ module Rubix
     include Associations::BelongsToHost
 
     #
-    # == Requests == 
+    # == Requests ==
     #
-    
+
     def create_params
       {:name => name, :hostid => host_id}
     end
@@ -33,7 +33,7 @@ module Rubix
     def update_params
       { id_field => id, :name => name, :hosts => {:hostid => host_id}}
     end
-    
+
     def self.find_params options={}
       super().merge({
                       :hostids => [options[:host_id]],
@@ -43,7 +43,7 @@ module Rubix
                       }
                     })
     end
-      
+
     def self.build app
       params = {
         :id   => app[id_field].to_i,
@@ -58,6 +58,6 @@ module Rubix
       end
       new(params)
     end
-    
+
   end
 end

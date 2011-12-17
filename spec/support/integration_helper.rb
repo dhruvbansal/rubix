@@ -1,6 +1,6 @@
 module Rubix
   module IntegrationHelper
-    
+
     def integration_test
       pending("A live Zabbix API to test against") unless $RUBIX_INTEGRATION_TEST
     end
@@ -45,17 +45,17 @@ module Rubix
 
     def self.setup_integration_tests test_yml_path
       return unless File.exist?(test_yml_path)
-      
+
       require 'yaml'
       test_data = YAML.load(open(test_yml_path))
       return if test_data['disable_integration_tests']
-      
+
       api_connection = test_data['api']
       mysql_connection = test_data['mysql']
       return unless api_connection && mysql_connection
 
       Rubix.connect(api_connection['url'], api_connection['username'], api_connection['password'])
-      
+
       require 'mysql2'
       $RUBIX_MYSQL_CLIENT = Mysql2::Client.new(:host => mysql_connection['host'], :username => mysql_connection['username'], :password => mysql_connection['password'], :database => mysql_connection['database'])
 
@@ -65,7 +65,7 @@ module Rubix
     end
 
     RUBIX_TABLES_TO_TRUNCATE = %w[applications groups hostmacro hosts hosts_groups hosts_profiles hosts_profiles_ext hosts_templates items items_applications profiles triggers trigger_depends]
-    
+
     def self.truncate_all_tables
       return unless $RUBIX_INTEGRATION_TEST
       RUBIX_TABLES_TO_TRUNCATE.each { |table| $RUBIX_MYSQL_CLIENT.query("TRUNCATE TABLE #{table}") }
@@ -74,6 +74,6 @@ module Rubix
     def truncate_all_tables
       IntegrationHelper.truncate_all_tables
     end
-    
+
   end
 end
