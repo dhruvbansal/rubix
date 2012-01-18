@@ -59,7 +59,7 @@ module Rubix
       self::VALUE_CODES[value_type_from_value(value)]
     end
     
-    attr_accessor :key, :description
+    attr_accessor :key, :description, :units
     attr_writer :type, :value_type
     
     def initialize properties={}
@@ -67,6 +67,7 @@ module Rubix
       @key            = properties[:key]
       @description    = properties[:description]
       @type           = properties[:type]
+      @units          = properties[:units]
       
       self.value_type = properties[:value_type]
 
@@ -110,9 +111,10 @@ module Rubix
         :description  => (description || 'Unknown'),
         :type         => self.class::TYPE_CODES[type],
         :key_         => key,
-        :value_type   => self.class::VALUE_CODES[value_type],
+        :value_type   => self.class::VALUE_CODES[value_type]
       }.tap do |p|
         p[:applications] = application_ids if application_ids
+        p[:units]        = units           if units
       end
     end
 
@@ -138,7 +140,8 @@ module Rubix
             :type            => TYPE_NAMES[item['type'].to_i],
             :value_type      => VALUE_NAMES[item['value_type'].to_i],
             :application_ids => (item['applications'] || []).map { |app| app['applicationid'].to_i },
-            :key             => item['key_']
+            :key             => item['key_'],
+            :units           => item['units']
           })
     end
     

@@ -22,7 +22,7 @@ describe "Items" do
     end
 
     it "can be created" do
-      item = Rubix::Item.new(:key => 'rubix.spec1', :description => 'rubix item description 1', :host_id => @host_1.id, :value_type => :character, :applications => [@app_1])
+      item = Rubix::Item.new(:key => 'rubix.spec1', :description => 'rubix item description 1', :host_id => @host_1.id, :value_type => :character, :applications => [@app_1], :units => 'B')
       item.save.should be_true
       item.host.name.should == @host_1.name
       item.applications.map(&:name).should include(@app_1.name)
@@ -33,7 +33,7 @@ describe "Items" do
   describe "when existing" do
 
     before do
-      @item = ensure_save(Rubix::Item.new(:key => 'rubix.spec1', :description => 'rubix item description 1', :host_id => @host_1.id, :value_type => :character, :applications => [@app_1]))
+      @item = ensure_save(Rubix::Item.new(:key => 'rubix.spec1', :description => 'rubix item description 1', :host_id => @host_1.id, :value_type => :character, :applications => [@app_1], :units => 'B'))
     end
 
     it "can have its host, application, and properties updated" do
@@ -42,6 +42,7 @@ describe "Items" do
       @item.type         = :external
       @item.value_type   = :unsigned_int
       @item.host_id      = @host_2.id
+      @item.units        = 'MB'
       @item.applications = [@app_2]
       @item.save.should be_true
 
@@ -52,6 +53,7 @@ describe "Items" do
       new_item.value_type.should == :unsigned_int
       new_item.type.should       == :external
       new_item.host.name.should == @host_2.name
+      new_item.units.should == 'MB'
       new_item.applications.map(&:name).should include(@app_2.name)
     end
 
