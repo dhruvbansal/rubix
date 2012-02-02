@@ -21,6 +21,8 @@ describe "Hosts" do
     it "can be created" do
       host = Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group_1])
       host.save.should be_true
+      host.monitored.should be_true
+      host.use_ip.should be_true
     end
   end
 
@@ -50,6 +52,16 @@ describe "Hosts" do
       new_host.host_groups.map(&:name).should include('rubix_spec_host_group_1', 'rubix_spec_host_group_2')
     end
 
+    it "can change its monitoring status" do
+      @host.monitored = false
+      @host.save
+      
+      new_host = Rubix::Host.find(:name => 'rubix_spec_host_1')
+      new_host.should_not be_nil
+      new_host.monitored.should be_false
+      new_host.status.should == :not_monitored
+    end
+    
     it "can change its templates" do
       @host.templates = [@template_1, @template_2]
       @host.save

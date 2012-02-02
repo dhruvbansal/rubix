@@ -12,8 +12,21 @@ module Rubix
 
     # The default port.
     DEFAULT_PORT = 10050
+
+    # The numeric codes for the various status types.
+    STATUS_CODES = {
+      :monitored     => 0,
+      :not_monitored => 1,
+      :unreachable   => 2,
+      :template      => 3,
+      :deleted       => 4,
+      :proxy_active  => 5,
+      :proxy_passive => 6
+    }.freeze
+    STATUS_NAMES = STATUS_CODES.invert.freeze
     
-    attr_accessor :name, :ip, :port, :profile, :status
+    attr_accessor :name, :ip, :port, :profile, :dns, :status
+    attr_writer   :use_ip, :monitored
     
     def initialize properties={}
       super(properties)
@@ -21,6 +34,9 @@ module Rubix
       @ip          = properties[:ip]
       @port        = properties[:port]
       @profile     = properties[:profile]
+      @monitored   = properties[:monitored]
+      @dns         = properties[:dns]
+      @use_ip      = properties[:use_ip]
       @status      = properties[:status]
 
       self.host_group_ids = properties[:host_group_ids]
@@ -33,6 +49,16 @@ module Rubix
       self.user_macros    = properties[:user_macros]
     end
 
+    def use_ip
+      return @use_ip if (!@use_ip.nil?)
+      @use_ip = true
+    end
+
+    def monitored
+      return @monitored if (!@monitored.nil?)
+      @monitored = true
+    end
+    
     #
     # == Associations == 
     #
@@ -62,12 +88,17 @@ module Rubix
         :macros    => user_macro_params
       }.tap do |hp|
         hp[:profile] = profile if profile
-        hp[:status]  = status  if status
+        hp[:status]  = (monitored ? 0 : 1) unless monitored.nil?
         
-        if ip
-          hp[:ip]      = ip
-          hp[:useip]   = true
-          hp[:port]    = port || self.class::DEFAULT_PORT
+        case
+        when use_ip && (!ip.nil?) && (!ip.empty?)
+          hp[:useip] = 1
+          hp[:ip]    = ip
+          hp[:port]  = port || self.class::DEFAULT_PORT
+        when (!dns.nil?) && (!dns.empty?)
+          hp[:useip] = 0
+          hp[:dns]   = dns
+          hp[:port]  = port || self.class::DEFAULT_PORT
         else
           hp[:ip] = self.class::BLANK_IP
         end
@@ -110,7 +141,16 @@ module Rubix
             :template_ids   => host['parentTemplates'].map { |template| (template['templateid'] || template[id_field]).to_i },
             :user_macros    => host['macros'].map { |um| UserMacro.new(:host_id => um[id_field].to_i, :id => um['hostmacroid'], :value => um['value'], :macro => um['macro']) },
             :profile        => host['profile'],
-            :port           => host['port']
+            :port           => host['port'],
+            :ip             => host['ip'],
+            :dns            => host['dns'],
+            :use_ip         => (host['useip'].to_i  == '1'),
+
+            # If the status is '1' then this is an unmonitored host.
+            # Otherwise it's either '0' for monitored and ok or
+            # something else for monitored and *not* ok.
+            :monitored      => (host['status'].to_i == 1 ? false : true),
+            :status         => self::STATUS_NAMES[host['status'].to_i]
           })
     end
     
