@@ -10,6 +10,7 @@ module Rubix
     
     autoload :BelongsToHost,        'rubix/associations/belongs_to_host'
     autoload :BelongsToTemplate,    'rubix/associations/belongs_to_template'
+    autoload :BelongsToItem,        'rubix/associations/belongs_to_item'
     
   end
 end

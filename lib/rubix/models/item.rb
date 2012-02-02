@@ -124,12 +124,14 @@ module Rubix
     
     def self.find_params options={}
       super().merge({
-                      :hostids => [options[:host_id]],
                       :filter => {
                         :key_ => options[:key],
                         :id   => options[:id]
                       }
-                    })
+                    }.tap do |o|
+                      o[:hostids] = [options[:host_id]] if options[:host_id]
+                    end
+                    )
     end
 
     def self.build item
@@ -143,6 +145,10 @@ module Rubix
             :key             => item['key_'],
             :units           => item['units']
           })
+    end
+
+    def time_series options={}
+      TimeSeries.find(options.merge(:item_id => self.id, :item => self))
     end
     
   end

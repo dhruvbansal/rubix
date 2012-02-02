@@ -7,4 +7,5 @@ module Rubix
   autoload :Application,    'rubix/models/application'
   autoload :UserMacro,      'rubix/models/user_macro'
   autoload :Trigger,        'rubix/models/trigger'
+  autoload :TimeSeries,     'rubix/models/time_series'
 end
