@@ -16,7 +16,6 @@ module Rubix
       end
 
       def item_id= iid
-        puts "I AM TRYING TO SET ITEM_ID=#{iid}"
         return unless iid
         @item_id = iid
       end

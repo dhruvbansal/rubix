@@ -16,7 +16,6 @@ module Rubix
       
       self.item    = properties[:item]
       self.item_id = properties[:item_id]
-      puts "MY ITEM ID IS #{self.item_id}"
     end
 
     def self.zabbix_name
