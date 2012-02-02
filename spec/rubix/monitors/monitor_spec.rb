@@ -20,7 +20,7 @@ describe Rubix::Monitor do
 
     it "should be the default behavior when run with no arguments" do
       ::ARGV.replace([])
-      $stdout.should_receive(:puts).with(@measurement)
+      $stdout.should_receive(:puts).with(/data/)
       @wrapper.run
     end
 
@@ -47,13 +47,13 @@ describe Rubix::Monitor do
     it "should create a new file if called with a path that doesn't exist" do
       FileUtils.rm(@file.path) if File.exist?(@file.path)
       @wrapper.run
-      File.read(@file.path).should include(@measurement)
+      File.read(@file.path).should match(/data/)
     end
 
     it "should append to an existing file" do
       File.open(@file.path, 'w') { |f| f.puts('old content') }
       @wrapper.run
-      File.read(@file.path).should include(@measurement)
+      File.read(@file.path).should match(/data/)
       File.read(@file.path).should include('old content')
     end
   end
