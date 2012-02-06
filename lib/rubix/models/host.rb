@@ -91,7 +91,7 @@ module Rubix
         hp[:status]  = (monitored ? 0 : 1) unless monitored.nil?
         
         case
-        when use_ip && (!ip.nil?) && (!ip.empty?)
+        when use_ip == true && (!ip.nil?) && (!ip.empty?)
           hp[:useip] = 1
           hp[:ip]    = ip
           hp[:port]  = port || self.class::DEFAULT_PORT
