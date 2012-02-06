@@ -145,10 +145,10 @@ module Rubix
       response = create_request
       if response.has_data?
         @id = response.result[id_field + 's'].first.to_i
-        info("Created #{resource_name}")
+        info("Created Zabbix #{resource_name}")
         true
       else
-        error("Error creating #{resource_name}: #{response.error_message}")
+        error("Error creating Zabbix #{resource_name}: #{response.error_message}")
         return false
       end
     end
@@ -181,13 +181,13 @@ module Rubix
       response = update_request
       case
       when response.has_data? && response.result.values.first.map(&:to_i).include?(id)
-        info("Updated #{resource_name}")
+        info("Updated Zabbix #{resource_name}")
         true
       when response.has_data?
-        error("No error, but failed to update #{resource_name}")
+        error("No error, but failed to update Zabbix #{resource_name}")
         false
       else
-        error("Error updating #{resource_name}: #{response.error_message}")
+        error("Error updating Zabbix #{resource_name}: #{response.error_message}")
         false
       end
     end
@@ -229,13 +229,13 @@ module Rubix
       response = destroy_request
       case
       when response.has_data? && response.result.values.first.first.to_i == id
-        info("Destroyed #{resource_name}")
+        info("Destroyed Zabbix #{resource_name}")
         true
       when response.zabbix_error? && response.error_message =~ /does not exist/i
         # was never there
         true
       else
-        error("Could not destroy #{resource_name}: #{response.error_message}")
+        error("Could not destroy Zabbix #{resource_name}: #{response.error_message}")
         false
       end
     end
@@ -286,7 +286,7 @@ module Rubix
       if response.has_data?
         response.result.map { |obj_data| build(obj_data) }
       else
-        error("Error listing all #{resource_name}s: #{response.error_message}") unless response.success?
+        error("Error listing all Zabbix #{resource_name}s: #{response.error_message}") unless response.success?
         []
       end
     end
@@ -332,7 +332,7 @@ module Rubix
       when response.success?
         # a successful but empty response means it wasn't found
       else
-        error("Error finding #{resource_name} using #{options.inspect}: #{response.error_message}")
+        error("Error finding Zabbix #{resource_name} using #{options.inspect}: #{response.error_message}")
         nil
       end
     end
@@ -357,7 +357,7 @@ module Rubix
           false
         end
       else
-        error("Error creating #{resource_name} using #{options.inspect}: #{response.error_message}")
+        error("Error creating Zabbix #{resource_name} using #{options.inspect}: #{response.error_message}")
         false
       end
     end
