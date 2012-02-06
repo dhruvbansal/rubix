@@ -48,8 +48,9 @@ describe "Triggers" do
       @trigger = ensure_save(Rubix::Trigger.new(:expression => '{rubix_spec_template_1:rubix.spec1.count(120,1)}>1', :description => 'rubix template trigger description 1', :status => :enabled))
     end
 
-    it "can have its host, description, and status updated" do
+    it "can have its host, description, priority, and status updated" do
       @trigger.status       = :disabled
+      @trigger.priority     = :average
       @trigger.description  = 'rubix template trigger description 2'
       # @trigger.host_id      = @template_2.id
       @trigger.save.should be_true
@@ -61,6 +62,7 @@ describe "Triggers" do
       new_trigger.template.name.should == @template_1.name
       new_trigger.items.map(&:id).should include(@template_item_1.id)
       new_trigger.status.should == :disabled
+      new_trigger.priority.should == :average
     end
 
     it "can be destroyed" do

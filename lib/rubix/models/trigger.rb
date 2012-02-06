@@ -77,8 +77,8 @@ module Rubix
         :templateid   => (template_id || host_id),
         :description  => (description || 'Unknown'),
         :expression   => expression,
-        :priority     => self.class::PRIORITY_CODES[priority],
-        :status       => self.class::STATUS_CODES[status],
+        :priority     => self.class::PRIORITY_NAMES[priority],
+        :status       => self.class::STATUS_NAMES[status],
         :comments     => comments,
         :url          => url
       }
