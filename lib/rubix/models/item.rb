@@ -30,9 +30,11 @@ module Rubix
     }.freeze
     TYPE_NAMES = TYPE_CODES.invert.freeze
 
-    # The numeric codes for the value types of a Zabbix item.  This Hash
-    # is used by ZabbixPipe#value_code_from_value to dynamically set the
-    # type of a value when creating a new Zabbix item.
+    # The numeric codes for the value types of a Zabbix item.
+    #
+    # This Hash is used by ZabbixPipe#value_code_from_value to
+    # dynamically set the type of a value when creating a new Zabbix
+    # item.
     VALUE_CODES = {
       :float        => 0,         # Numeric (float)
       :character    => 1,         # Character
@@ -41,6 +43,26 @@ module Rubix
       :text         => 4          # Text
     }.freeze
     VALUE_NAMES = VALUE_CODES.invert.freeze
+
+    # The numeric codes for the data types of a Zabbix item.
+    #
+    # The default will be <tt>:decimal</tt>
+    DATA_CODES = {
+      :decimal     => 0,
+      :octal       => 1,
+      :hexadecimal => 2
+    }.freeze
+    DATA_NAMES = DATA_CODES.invert.freeze
+
+    # The numeric codes for the status of a Zabbix item.
+    #
+    # The default will be <tt>:active</tt>
+    STATUS_CODES = {
+      :active        => 0,
+      :disabled      => 1,
+      :not_supported => 3
+    }.freeze
+    STATUS_NAMES = STATUS_CODES.invert.freeze
 
     # Return the +value_type+ name (:float, :text, &c.) for a Zabbix
     # item's value type by examining the given +value+.
@@ -60,8 +82,8 @@ module Rubix
     end
     
     attr_accessor :key, :description, :units
-    attr_writer :type, :value_type
-    
+    attr_writer :type, :value_type, :data_type, :history, :trends, :status
+
     def initialize properties={}
       super(properties)
       @key            = properties[:key]
@@ -70,6 +92,10 @@ module Rubix
       @units          = properties[:units]
       
       self.value_type = properties[:value_type]
+      self.data_type  = properties[:data_type]
+      self.history    = properties[:history]
+      self.trends     = properties[:trends]
+      self.status     = properties[:status]
 
       self.host            = properties[:host]
       self.host_id         = properties[:host_id]
@@ -89,9 +115,26 @@ module Rubix
       @value_type ||= :character
     end
 
+    def data_type
+      @data_type ||= :decimal
+    end
+
     def type
       @type ||= :trapper
     end
+
+    def history
+      @history ||= 90
+    end
+
+    def trends
+      @trends ||= 365
+    end
+
+    def status
+      @status ||= :active
+    end
+    
 
     #
     # == Associations ==
@@ -111,7 +154,11 @@ module Rubix
         :description  => (description || 'Unknown'),
         :type         => self.class::TYPE_CODES[type],
         :key_         => key,
-        :value_type   => self.class::VALUE_CODES[value_type]
+        :value_type   => self.class::VALUE_CODES[value_type],
+        :data_type    => self.class::DATA_CODES[data_type],
+        :history      => history,
+        :trends       => trends,
+        :status       => self.class::STATUS_CODES[status],
       }.tap do |p|
         p[:applications] = application_ids if application_ids
         p[:units]        = units           if units
@@ -141,6 +188,10 @@ module Rubix
             :description     => item['description'],
             :type            => TYPE_NAMES[item['type'].to_i],
             :value_type      => VALUE_NAMES[item['value_type'].to_i],
+            :data_type       => DATA_NAMES[item['data_type'].to_i],
+            :history         => item['history'].to_i,
+            :trends          => item['trends'].to_i,
+            :status          => STATUS_NAMES[item['status'].to_i],
             :application_ids => (item['applications'] || []).map { |app| app['applicationid'].to_i },
             :key             => item['key_'],
             :units           => item['units']

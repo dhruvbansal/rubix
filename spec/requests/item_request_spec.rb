@@ -41,6 +41,10 @@ describe "Items" do
       @item.description  = 'rubix item description 2'
       @item.type         = :external
       @item.value_type   = :unsigned_int
+      @item.data_type    = :octal
+      @item.history      = 91
+      @item.trends       = 400
+      @item.status       = :disabled
       @item.host_id      = @host_2.id
       @item.units        = 'MB'
       @item.applications = [@app_2]
@@ -51,9 +55,13 @@ describe "Items" do
       new_item = Rubix::Item.find(:key => 'rubix.spec2', :host_id => @host_2.id)
       new_item.should_not be_nil
       new_item.value_type.should == :unsigned_int
+      new_item.data_type.should  == :octal
+      new_item.history.should    == 91
+      new_item.trends.should     == 400
+      new_item.status.should     == :disabled
       new_item.type.should       == :external
-      new_item.host.name.should == @host_2.name
-      new_item.units.should == 'MB'
+      new_item.host.name.should  == @host_2.name
+      new_item.units.should      == 'MB'
       new_item.applications.map(&:name).should include(@app_2.name)
     end
 
