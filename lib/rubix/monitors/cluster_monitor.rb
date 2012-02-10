@@ -38,7 +38,7 @@ module Rubix
   # script.
   class ClusterMonitor < ChefMonitor
 
-    attr_reader :private_ips_by_cluster, :nodes_by_cluster
+    attr_reader :all_private_ips_by_cluster, :private_ips_by_cluster, :all_nodes_by_cluster, :nodes_by_cluster
 
     def initialize settings
       super(settings)
@@ -54,14 +54,23 @@ module Rubix
     end
 
     def group_nodes_by_cluster
-      @private_ips_by_cluster = {}
-      @nodes_by_cluster       = {}
+      @all_private_ips_by_cluster = {}
+      @private_ips_by_cluster     = {}
+      @all_nodes_by_cluster       = {}
+      @nodes_by_cluster           = {}
       matching_chef_nodes.first.each do |node|
-        @nodes_by_cluster[node['cluster_name']] ||= []
-        @nodes_by_cluster[node['cluster_name']] << node
+        @all_nodes_by_cluster[node['cluster_name']] ||= []
+        @nodes_by_cluster[node['cluster_name']]     ||= []
         
-        @private_ips_by_cluster[node['cluster_name']] ||= []
-        @private_ips_by_cluster[node['cluster_name']] << node['ipaddress']
+        @all_nodes_by_cluster[node['cluster_name']] << node
+        @nodes_by_cluster[node['cluster_name']]     << node unless %w[stopped].include?(node['state'])
+        
+        
+        @all_private_ips_by_cluster[node['cluster_name']] ||= []
+        @private_ips_by_cluster[node['cluster_name']]     ||= []
+        
+        @all_private_ips_by_cluster[node['cluster_name']] << node['ipaddress']
+        @private_ips_by_cluster[node['cluster_name']]     << node['ipaddress'] unless %w[stopped].include?(node['state'])
       end
     end
     
