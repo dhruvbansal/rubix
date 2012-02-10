@@ -8,8 +8,7 @@ module Rubix
 
     # The numeric codes for the various item types.
     #
-    # Items without a type will be set to 'trapper' so they can be
-    # easily written to manually.
+    # Items without a type will be set to 'zabbix'.
     TYPE_CODES = {
       :zabbix     => 0,
       :snmpv1     => 1,
@@ -81,21 +80,22 @@ module Rubix
       self::VALUE_CODES[value_type_from_value(value)]
     end
     
-    attr_accessor :key, :description, :units
-    attr_writer :type, :value_type, :data_type, :history, :trends, :status
+    attr_accessor :key, :description, :units, :multiply_by, :data_type, :history, :trends, :status, :frequency
+    attr_writer :type, :value_type
 
     def initialize properties={}
       super(properties)
-      @key            = properties[:key]
-      @description    = properties[:description]
-      @type           = properties[:type]
-      @units          = properties[:units]
-      
-      self.value_type = properties[:value_type]
-      self.data_type  = properties[:data_type]
-      self.history    = properties[:history]
-      self.trends     = properties[:trends]
-      self.status     = properties[:status]
+      self.key             = properties[:key]
+      self.description     = properties[:description]
+      self.type            = properties[:type]
+      self.units           = properties[:units]
+      self.multiply_by     = properties[:multiply_by]
+      self.value_type      = properties[:value_type]
+      self.data_type       = properties[:data_type]
+      self.history         = properties[:history]
+      self.trends          = properties[:trends]
+      self.status          = properties[:status]
+      self.frequency       = properties[:frequency]
 
       self.host            = properties[:host]
       self.host_id         = properties[:host_id]
@@ -120,21 +120,8 @@ module Rubix
     end
 
     def type
-      @type ||= :trapper
+      @type ||= :zabbix
     end
-
-    def history
-      @history ||= 90
-    end
-
-    def trends
-      @trends ||= 365
-    end
-
-    def status
-      @status ||= :active
-    end
-    
 
     #
     # == Associations ==
@@ -155,13 +142,18 @@ module Rubix
         :type         => self.class::TYPE_CODES[type],
         :key_         => key,
         :value_type   => self.class::VALUE_CODES[value_type],
-        :data_type    => self.class::DATA_CODES[data_type],
-        :history      => history,
-        :trends       => trends,
-        :status       => self.class::STATUS_CODES[status],
       }.tap do |p|
         p[:applications] = application_ids if application_ids
-        p[:units]        = units           if units
+        p[:units]        = units                 if units
+        p[:data_type]    = self.class::DATA_CODES[data_type] if data_type
+        p[:history]      = history.to_i if history
+        p[:trends]       = trends.to_i if trends
+        p[:status]       = self.class::STATUS_CODES[status] if status
+        p[:delay]        = frequency if frequency
+        if multiply_by && multiply_by.to_f != 0.0
+          p[:multiplier] = 1
+          p[:formula]    = multiply_by.to_f
+        end
       end
     end
 
@@ -194,7 +186,9 @@ module Rubix
             :status          => STATUS_NAMES[item['status'].to_i],
             :application_ids => (item['applications'] || []).map { |app| app['applicationid'].to_i },
             :key             => item['key_'],
-            :units           => item['units']
+            :units           => item['units'],
+            :frequency       => item['delay'].to_i,
+            :multiply_by     => ((item['multiplier'].to_i == 1 && item['formula'].to_f != 0.0) ? item['formula'].to_f : nil)
           })
     end
 

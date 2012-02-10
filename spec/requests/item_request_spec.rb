@@ -45,6 +45,8 @@ describe "Items" do
       @item.history      = 91
       @item.trends       = 400
       @item.status       = :disabled
+      @item.frequency    = 31
+      @item.multiply_by  = 0.1
       @item.host_id      = @host_2.id
       @item.units        = 'MB'
       @item.applications = [@app_2]
@@ -60,6 +62,8 @@ describe "Items" do
       new_item.trends.should     == 400
       new_item.status.should     == :disabled
       new_item.type.should       == :external
+      new_item.frequency.should  == 31
+      new_item.multiply_by.should == 0.1
       new_item.host.name.should  == @host_2.name
       new_item.units.should      == 'MB'
       new_item.applications.map(&:name).should include(@app_2.name)
