@@ -140,5 +140,19 @@ describe Rubix::Monitor do
     end
 
   end
+
+  describe 'writing to a Sender' do
+    before do
+      @sender = mock("Rubix::Sender")
+      @sender.stub!(:close) ; @sender.stub!(:flush)
+      Rubix::Sender.should_receive(:new).with(kind_of(Hash)).and_return(@sender)
+      ::ARGV.replace(['--send', '--host=foobar'])
+    end
+
+    it "should write to the sender" do
+      @sender.should_receive(:puts).with('- key value')
+      @wrapper.run
+    end
+  end
   
 end

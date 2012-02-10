@@ -1,5 +1,4 @@
 require 'configliere'
-require 'open3'
 
 module Rubix
 
@@ -186,22 +185,14 @@ module Rubix
     end
 
     def sender?
-      if settings[:send] == true
-        %w[server port host config].each do |var|
-          raise Rubix::Error.new("Cannot send values to Zabbix: Set value of --#{var}.") if settings[var.to_sym].nil?
-        end
-        true
-      else
-        false
-      end
+      settings[:send] == true
     end
     
     def output
       return @output if @output
       case
       when sender?
-        @sender_stdin, @sender_stdout, @sender_stderr, @sender_wait_thr = Open3.popen3("zabbix_sender --zabbix-server #{settings[:server]} --host #{settings[:host]}")
-        @output = @sender_stdin
+        @output = Sender.new(:host => settings[:host], :server => settings[:server], :port => settings[:port], :config => settings[:config])
       when stdout?
         @output = $stdout
       when fifo?
@@ -220,9 +211,6 @@ module Rubix
       return unless output
       output.flush
       case
-      when sender?
-        # puts @sender_stdout.read
-        [@sender_stdin, @sender_stdout, @sender_stderr].each { |fh| fh.close } if sender?
       when stdout?
         return
       else

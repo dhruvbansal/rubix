@@ -62,7 +62,7 @@ rescue Rubix::Error => e
 end
 
 begin
-  sender = Rubix::Sender.new(Settings)
+  sender = Rubix::AutoSender.new(Settings)
 rescue Rubix::Error => e
   $stderr.puts e.message
   exit(1)
