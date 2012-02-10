@@ -1,4 +1,5 @@
 require 'configliere'
+require 'open3'
 
 module Rubix
 
@@ -58,7 +59,15 @@ module Rubix
       Configliere::Param.new.tap do |s|
         s.use :commandline
         
-        s.define :loop,            :description => "Run every this many seconds",          :required => false, :type => Integer
+        s.define :loop,   :description => "Run every this many seconds",                         :required => false, :type => Integer
+
+        # The following options are only used when sending directly
+        # with <tt>zabbix_sender</tt>
+        s.define :server, :description => "IP of a Zabbix server",                               :required => false, :default => 'localhost'
+        s.define :port,   :description => "Port of a Zabbix server",                             :required => false, :type => Integer,  :default => 10051
+        s.define :host,   :description => "Name of a Zabbix host",                               :required => false
+        s.define :config, :description => "Local Zabbix agentd configuration file",              :required => false, :default => "/etc/zabbix/zabbix_agentd.conf"
+        s.define :send,   :description => "Send data directlyt to Zabbix using 'zabbix_sender'", :required => false, :type => :boolean, :default => false
       end
     end
 
@@ -115,8 +124,8 @@ module Rubix
     #
     # Methods for writing data to Zabbix.
     #
-    
-    def write measurement=nil &block
+
+    def write measurement=nil, &block
       return unless output
       return unless measurement || block_given?
       
@@ -141,7 +150,7 @@ module Rubix
           vals << measurement[:key]
           vals << measurement[:timestamp] if measurement[:timestamp]
           
-          value = measurement[:value] || ''
+          value = measurement[:value].to_s
           if value.include?(' ')
             value.insert(0,  "'")
             value.insert(-1, "'")
@@ -175,10 +184,24 @@ module Rubix
     def fifo?
       !stdout? && File.exist?(output_path) && File.ftype(output_path) == 'fifo'
     end
+
+    def sender?
+      if settings[:send] == true
+        %w[server port host config].each do |var|
+          raise Rubix::Error.new("Cannot send values to Zabbix: Set value of --#{var}.") if settings[var.to_sym].nil?
+        end
+        true
+      else
+        false
+      end
+    end
     
     def output
       return @output if @output
       case
+      when sender?
+        @sender_stdin, @sender_stdout, @sender_stderr, @sender_wait_thr = Open3.popen3("zabbix_sender --zabbix-server #{settings[:server]} --host #{settings[:host]}")
+        @output = @sender_stdin
       when stdout?
         @output = $stdout
       when fifo?
@@ -196,9 +219,16 @@ module Rubix
     def close
       return unless output
       output.flush
-      return if stdout?
-      output.close
+      case
+      when sender?
+        # puts @sender_stdout.read
+        [@sender_stdin, @sender_stdout, @sender_stderr].each { |fh| fh.close } if sender?
+      when stdout?
+        return
+      else
+        output.close
+      end
     end
-
   end
 end
+
