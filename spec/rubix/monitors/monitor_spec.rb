@@ -3,29 +3,93 @@ require 'tempfile'
 
 describe Rubix::Monitor do
 
-  before do
-    @measurement = '{"data":[{"value":"bar","key":"foo"}]}'
-    
-    @wrapper = Class.new(Rubix::Monitor)
-    @wrapper.class_eval do
-      def measure
-        write do |data|
-          data << ['foo', 'bar']
-        end
+  def monitor_wrapper(&block)
+    Class.new(Rubix::Monitor).tap do |wrapper|
+      wrapper.class_eval do
+        define_method(:measure, &block)
       end
     end
   end
 
+  before do
+    @wrapper = monitor_wrapper do
+      write ['key', 'value']
+    end
+    ::ARGV.replace([])
+  end
+
+  describe "making measurements" do
+
+    it "should accept a two-element Array of [key, value]" do
+      $stdout.should_receive(:puts).with('- key value')
+      @wrapper.run
+    end
+
+    it "should accept a three-element Array of [host, key, value]" do
+      @wrapper = monitor_wrapper do
+        write ['host', 'key', 'value']
+      end
+      $stdout.should_receive(:puts).with('host key value')
+      @wrapper.run
+    end
+
+    it "should accept a four-element Array of [host, key, timestamp, value]" do
+      @wrapper = monitor_wrapper do
+        write ['host', 'key', 1328875053, 'value']
+      end
+      $stdout.should_receive(:puts).with('host key 1328875053 value')
+      @wrapper.run
+    end
+
+    it "should accept a hash with just a key and a value" do
+      @wrapper = monitor_wrapper do
+        write({ :key => 'key', :value => 'value' })
+      end
+      $stdout.should_receive(:puts).with('- key value')
+      @wrapper.run
+    end
+
+    it "should accept a hash with a host, key, and a value" do
+      @wrapper = monitor_wrapper do
+        write({ :host => 'host', :key => 'key', :value => 'value' })
+      end
+      $stdout.should_receive(:puts).with('host key value')
+      @wrapper.run
+    end
+
+    it "should accept a hash with a host, key, timestamp, and a value" do
+      @wrapper = monitor_wrapper do
+        write({ :host => 'host', :key => 'key', :timestamp => 1328875053, :value => 'value' })
+      end
+      $stdout.should_receive(:puts).with('host key 1328875053 value')
+      @wrapper.run
+    end
+
+    it "should accept multiple values from a block" do
+      @wrapper = monitor_wrapper do
+        write do |data|
+          data << ['key', 'value']
+          data << { :key => 'key', :value => 'value' }
+        end
+        $stdout.should_receive(:puts).with("key value\nkey value")
+        @wrapper.run
+      end
+      
+    end
+  end
+  
   describe 'writing to STDOUT' do
 
-    it "should be the default behavior when run with no arguments" do
+    before do
       ::ARGV.replace([])
-      $stdout.should_receive(:puts).with(/data/)
+    end
+
+    it "should be the default behavior when run with no arguments" do
+      $stdout.should_receive(:puts).with('- key value')
       @wrapper.run
     end
 
     it "should flush after each write" do
-      ::ARGV.replace([])
       $stdout.stub!(:puts)
       $stdout.should_receive(:flush).twice()
       @wrapper.run
@@ -37,7 +101,7 @@ describe Rubix::Monitor do
     
     before do
       @file = Tempfile.new('monitor', '/tmp')
-      ::ARGV.replace([@file.path])      
+      ::ARGV.replace([@file.path])
     end
 
     after do
@@ -47,13 +111,13 @@ describe Rubix::Monitor do
     it "should create a new file if called with a path that doesn't exist" do
       FileUtils.rm(@file.path) if File.exist?(@file.path)
       @wrapper.run
-      File.read(@file.path).should match(/data/)
+      File.read(@file.path).should match('- key value')
     end
 
     it "should append to an existing file" do
       File.open(@file.path, 'w') { |f| f.puts('old content') }
       @wrapper.run
-      File.read(@file.path).should match(/data/)
+      File.read(@file.path).should include('- key value')
       File.read(@file.path).should include('old content')
     end
   end
@@ -78,4 +142,3 @@ describe Rubix::Monitor do
   end
   
 end
-  

@@ -21,16 +21,12 @@ module Rubix
   #       webserver = chef_node_from_node_name('webserver')
   #       begin
   #         if Net::HTTP.get_response(URI.parse("http://#{webserver['ec2']['public_hostname']}")).code.to_i == 200
-  #           write do |data|
-  #             data << ['webserver.available', 1]
-  #           end
+  #           write ['webserver.available', 1]
   #           return
   #         end
   #       rescue => e
   #       end
-  #       write do |data|
-  #         data << ([['webserver.available', 0]])
-  #       end
+  #       write ['webserver.available', 0]
   #     end
   #   end
   #   

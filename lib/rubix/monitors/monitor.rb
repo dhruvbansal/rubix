@@ -1,5 +1,4 @@
 require 'configliere'
-require 'json'
 
 module Rubix
 
@@ -18,9 +17,20 @@ module Rubix
   #   class UptimeMonitor < Rubix::Monitor
   #
   #     def measure
-  #       return unless `uptime`.chomp =~ /(\d+) days/
+  #       return unless `uptime`.chomp =~ /(\d+) days.*(\d+) users.*load average: ([\d\.]+), ([\d\.]+), ([\d\.]+)/
+  #
+  #       # can write one value at a time
+  #       write ['uptime', $1.to_i]
+  #
+  #       # or can use a block
   #       write do |data|
-  #         data << ([['uptime', $1.to_i]])
+  #         # values can be arrays
+  #         data << ['users', $2.to_i]
+  #         # or hashes
+  #         data << { :key => 'load15', :value => $3.to_i }
+  #         data << { :key => 'load5',  :value => $4.to_i }
+  #         # can even pass a different host
+  #         data << { :key => 'load1',  :value => $5.to_i, :host => 'foobar-host' }
   #       end
   #     end
   #   end
@@ -106,16 +116,14 @@ module Rubix
     # Methods for writing data to Zabbix.
     #
     
-    def write options={}, &block
+    def write measurement=nil &block
       return unless output
-      data = []
+      return unless measurement || block_given?
+      
+      data = [measurement]
       block.call(data) if block_given?
-      text = {
-        :data => data.map do |measurement|
-          key, value = measurement
-          { :key => key, :value => value }
-        end
-      }.merge(options).to_json
+
+      text = data.compact.map { |measurement| format_measurement(measurement) }.compact.join("\n")
 
       begin
         output.puts(text)
@@ -124,8 +132,36 @@ module Rubix
       end
     end
 
+    def format_measurement measurement
+      # <hostname> key <timestamp> value
+      [].tap do |vals|
+        case measurement
+        when Hash
+          vals << (measurement[:host].nil? ? '-' : measurement[:host])
+          vals << measurement[:key]
+          vals << measurement[:timestamp] if measurement[:timestamp]
+          
+          value = measurement[:value] || ''
+          if value.include?(' ')
+            value.insert(0,  "'")
+            value.insert(-1, "'")
+          end
+          vals << value
+        when Array
+          if measurement.length == 2
+            vals << '-'
+            vals.concat(measurement)
+          else
+            vals.concat(measurement)
+          end
+        else
+          return
+        end
+      end.map(&:to_s).join(' ')
+    end
+
     def output_path
-      settings.rest.first
+      settings.rest && settings.rest.first
     end
 
     def stdout?
@@ -149,6 +185,7 @@ module Rubix
         begin
           @output = open(output_path, (File::WRONLY | File::NONBLOCK))
         rescue Errno::ENXIO
+          nil
           # FIFO's reader isn't alive...
         end
       else
