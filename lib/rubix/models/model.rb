@@ -362,5 +362,20 @@ module Rubix
       end
     end
 
+    def self.list ids
+      return [] if ids.nil? || ids.empty?
+      response = request("#{zabbix_name}.get", get_params.merge((id_field + 's') => ids))
+      case
+      when response.has_data?
+        response.result.map do |obj|
+          build(obj)
+        end
+      when response.success?
+        []
+      else
+        error("Error listing Zabbix #{resource_name}s: #{response.error_message}")
+      end
+    end
+    
   end
 end

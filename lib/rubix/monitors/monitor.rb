@@ -55,7 +55,8 @@ module Rubix
     #
 
     def self.default_settings
-      Configliere::Param.new.tap do |s|
+      @default_settings ||= Configliere::Param.new.tap do |s|
+        
         s.use :commandline
         
         s.define :loop,   :description => "Run every this many seconds",                         :required => false, :type => Integer
@@ -63,10 +64,10 @@ module Rubix
         # The following options are only used when sending directly
         # with <tt>zabbix_sender</tt>
         s.define :server, :description => "IP of a Zabbix server",                               :required => false, :default => 'localhost'
-        s.define :port,   :description => "Port of a Zabbix server",                             :required => false, :type => Integer,  :default => 10051
-        s.define :host,   :description => "Name of a Zabbix host",                               :required => false
+        s.define :port,   :description => "Port of a Zabbix server",                             :required => false, :default => 10051, :type => Integer
+        s.define :host,   :description => "Name of a Zabbix host",                               :required => false, :default => ENV["HOSTNAME"]
         s.define :config, :description => "Local Zabbix agentd configuration file",              :required => false, :default => "/etc/zabbix/zabbix_agentd.conf"
-        s.define :send,   :description => "Send data directlyt to Zabbix using 'zabbix_sender'", :required => false, :type => :boolean, :default => false
+        s.define :send,   :description => "Send data directlyt to Zabbix using 'zabbix_sender'", :required => false, :default => false, :type => :boolean
       end
     end
 

@@ -1,6 +1,6 @@
 module Rubix
-  # A generic monitor class for constructing Zabbix monitors that need
-  # to talk to Chef servers.
+  
+  # A module that lets monitors talk to Chef servers.
   #
   # This class handles the low-level logic of connecting to Chef and
   # parsing results from searches.
@@ -15,8 +15,10 @@ module Rubix
   #   
   #   require 'net/http'
   #   
-  #   class WebserverMonitor < Rubix::ChefMonitor
+  #   class WebserverMonitor < Rubix::Monitor
   #   
+  #     include Rubix::ChefMonitor
+  #     
   #     def measure
   #       webserver = chef_node_from_node_name('webserver')
   #       begin
@@ -31,16 +33,13 @@ module Rubix
   #   end
   #   
   #   WebserverMonitor.run if $0 == __FILE__
-  #
-  # See documentation for Rubix::Monitor to understand how to run this
-  # script.
-  class ChefMonitor < Monitor
+  module ChefMonitor
 
-    def self.default_settings
-      super().tap do |s|
-        s.define :chef_server_url, :description => "Chef server URL" ,                     :required => true
-        s.define :chef_node_name,  :description => "Node name to identify to Chef server", :required => true
-        s.define :chef_client_key, :description => "Path to Chef client private key",      :required => true
+    def self.included klass
+      klass.default_settings.tap do |s|
+        s.define :chef_server_url, :description => "Chef server URL" ,                     :required => true, :default => 'http://localhost'
+        s.define :chef_node_name,  :description => "Node name to identify to Chef server", :required => true, :default => ENV["HOSTNAME"]
+        s.define :chef_client_key, :description => "Path to Chef client private key",      :required => true, :default => '/etc/chef/client.pem'
       end
     end
     
@@ -67,11 +66,16 @@ module Rubix
       results.first.first
     end
 
-    def chef_node_name_from_ip ip
+    def chef_node_from_ip ip
       return if ip.nil? || ip.empty?
       results = search_nodes("ipaddress:#{ip} OR fqdn:#{ip}")
       return unless results.first.size > 0
-      results.first.first['node_name']
+      results.first.first
+    end
+
+    def chef_node_name_from_ip ip
+      node = chef_node_from_ip(ip)
+      return node['node_name'] if node
     end
     
   end
