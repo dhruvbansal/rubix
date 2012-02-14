@@ -190,7 +190,7 @@ module Rubix
       return false unless before_update
       response = update_request
       case
-      when response.has_data? && response.result.values.first.map(&:to_i).include?(id)
+      when response.has_data? && (response.result.values.first == true || response.result.values.first.map(&:to_i).include?(id))
         info("Updated Zabbix #{resource_name}")
         true
       when response.has_data?
