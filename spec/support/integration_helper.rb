@@ -76,7 +76,7 @@ module Rubix
       $RUBIX_INTEGRATION_TEST = api_connection
     end
 
-    RUBIX_TABLES_TO_TRUNCATE = %w[applications groups hostmacro hosts hosts_groups hosts_profiles hosts_profiles_ext hosts_templates items items_applications profiles triggers trigger_depends history sessions media_type]
+    RUBIX_TABLES_TO_TRUNCATE = %w[applications groups hostmacro hosts hosts_groups hosts_profiles hosts_profiles_ext hosts_templates items items_applications profiles triggers trigger_depends history sessions media_type scripts]
     
     def self.truncate_all_tables
       return unless $RUBIX_INTEGRATION_TEST

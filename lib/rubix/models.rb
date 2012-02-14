@@ -9,4 +9,5 @@ module Rubix
   autoload :Trigger,        'rubix/models/trigger'
   autoload :TimeSeries,     'rubix/models/time_series'
   autoload :MediaType,      'rubix/models/media_type'
+  autoload :Script,         'rubix/models/script'
 end
