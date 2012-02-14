@@ -101,6 +101,7 @@ module Rubix
           hp[:port]  = port || self.class::DEFAULT_PORT
         else
           hp[:ip] = self.class::BLANK_IP
+          hp[:useip] = 1
         end
       end
     end

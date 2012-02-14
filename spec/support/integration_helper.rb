@@ -46,6 +46,14 @@ module Rubix
         raise e
       end
     end
+    
+    def create_history item
+      (1..10).to_a.collect do |i|
+        history = { "itemid" => item.id.to_s, "clock" => (Time.now.to_i - 5*i).to_s, "value" => rand(100).to_s }
+        $RUBIX_MYSQL_CLIENT.query("INSERT INTO history_uint (#{history.keys.join(', ')}) VALUES (#{history.values.join(', ')})")
+        history
+      end
+    end
 
     def self.setup_integration_tests test_yml_path
       return unless File.exist?(test_yml_path)
@@ -68,7 +76,7 @@ module Rubix
       $RUBIX_INTEGRATION_TEST = api_connection
     end
 
-    RUBIX_TABLES_TO_TRUNCATE = %w[applications groups hostmacro hosts hosts_groups hosts_profiles hosts_profiles_ext hosts_templates items items_applications profiles triggers trigger_depends sessions]
+    RUBIX_TABLES_TO_TRUNCATE = %w[applications groups hostmacro hosts hosts_groups hosts_profiles hosts_profiles_ext hosts_templates items items_applications profiles triggers trigger_depends history sessions]
     
     def self.truncate_all_tables
       return unless $RUBIX_INTEGRATION_TEST
