@@ -20,24 +20,50 @@ describe Rubix::Connection do
     @connection = Rubix::Connection.new('localhost/api.php', 'username', 'password')
   end
 
-  it "should attempt to authorize itself without being asked" do
-    @connection.should_receive(:authorize!)
-    @connection.request('foobar', {})
+  describe "sending API requests" do
+
+    it "should attempt to authorize itself without being asked" do
+      @connection.should_receive(:authorize!)
+      @connection.request('foobar', {})
+    end
+
+    it "should not repeatedly authorize itself" do
+      @mock_response.stub!(:body).and_return(@good_auth_response, @blah_response, @blah_response)
+      @connection.request('foobar', {})
+      @connection.should_not_receive(:authorize!)
+      @connection.request('foobar', {})
+    end
+
+    it "should increment its request ID" do
+      @mock_response.stub!(:body).and_return(@good_auth_response, @blah_response, @blah_response)
+      @connection.request('foobar', {})
+      @connection.request('foobar', {})
+      @connection.request_id.should == 3 # it's the number used for the *next* request
+    end
+
   end
 
-  it "should not repeatedly authorize itself" do
-    @mock_response.stub!(:body).and_return(@good_auth_response, @blah_response, @blah_response)
-    @connection.request('foobar', {})
-    @connection.should_not_receive(:authorize!)
-    @connection.request('foobar', {})
-  end
+  describe "sending web requests" do
 
-  it "should increment its request ID" do
-    @mock_response.stub!(:body).and_return(@good_auth_response, @blah_response, @blah_response)
-    @connection.request('foobar', {})
-    @connection.request('foobar', {})
-    @connection.request_id.should == 3 # it's the number used for the *next* request
-  end
+    it "should attempt to authorize itself without being asked" do
+      @connection.should_receive(:authorize!)
+      @connection.web_request("GET", "/")
+    end
 
-end
+    it "should not repeatedly authorize itself" do
+      @mock_response.stub!(:body).and_return(@good_auth_response, @blah_response, @blah_response)
+      @connection.web_request("GET", "/")
+      @connection.should_not_receive(:authorize!)
+      @connection.web_request("GET", "/")
+    end
+
+    it "should NOT increment its request ID" do
+      @mock_response.stub!(:body).and_return(@good_auth_response, @blah_response, @blah_response)
+      @connection.web_request("GET", "/")
+      @connection.web_request("GET", "/")
+      @connection.request_id.should == 1
+    end
+
+  end
   
+end

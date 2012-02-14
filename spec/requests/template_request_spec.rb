@@ -22,6 +22,11 @@ describe "Templates" do
       template = Rubix::Template.new(:name => 'rubix_spec_template_1', :host_groups => [@host_group_1])
       template.save.should be_true
     end
+
+    it "can be imported" do
+      Rubix::Template.import(File.new(data_path('test_template.xml')))
+      Rubix::Template.find(:name => 'test').should_not be_nil
+    end
     
   end
 
@@ -45,8 +50,4 @@ describe "Templates" do
     
   end
 
-  it "should be able to import and export a template" do
-    pending "Learning how to import/export XML via the API"
-  end
-  
 end

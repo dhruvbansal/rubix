@@ -1,4 +1,5 @@
 require 'uri'
+require 'cgi'
 require 'net/http'
 require 'json'
 
@@ -10,6 +11,13 @@ module Rubix
   class Connection
 
     include Logs
+
+    # The name of the cookie used by the Zabbix web application.  Used
+    # when emulating a request from a browser.
+    COOKIE_NAME = 'zbx_sessionid'
+
+    # The content type header to send when emulating a browser.
+    CONTENT_TYPE = 'multipart/form-data'
 
     # @return [URI] The URI for the Zabbix API.
     attr_reader :uri
@@ -62,18 +70,33 @@ module Rubix
     #
     # @param [String] method the name of the Zabbix API method
     # @param [Hash,Array] params parameters for the method call
-    # @retrn [Rubix::Response]
+    # @return [Rubix::Response]
     def request method, params
       authorize! unless authorized?
+      response = till_response do
+        send_api_request :jsonrpc => "2.0",
+        :id      => request_id,
+        :method  => method,
+        :params  => params,
+        :auth    => auth
+      end
+      Response.new(response)
+    end
+
+    # Send a request to the Zabbix web application.  The request is
+    # designed to emulate a web browser.
+    #
+    # Any values in +data+ which are file handles will trigger a
+    # multipart POST request, uploading those files.
+    #
+    # @param [String] verb one of "GET" or "POST"
+    # @param [String] path the path to send the request to
+    # @param [Hash] data the data to include in the request
+    # @return [Net::HTTP::Response]
+    def web_request verb, path, data={}
+      authorize! unless authorized?
       till_response do
-        raw_params = {
-          :jsonrpc => "2.0",
-          :id      => request_id,
-          :method  => method,
-          :params  => params,
-          :auth    => auth
-        }
-        send_raw_request(raw_params)
+        send_web_request(verb, path, data)
       end
     end
     
@@ -86,7 +109,7 @@ module Rubix
     # Force the connection to execute an authorization request and
     # renew (or set) the authorization token.
     def authorize!
-      response = till_response { send_raw_request(authorization_params) }
+      response = Response.new(till_response { send_api_request(authorization_params) })
       raise AuthenticationError.new("Could not authenticate with Zabbix API at #{uri}: #{response.error_message}") if response.error?
       raise AuthenticationError.new("Malformed response from Zabbix API: #{response.body}") unless response.string?
       @auth = response.result
@@ -145,7 +168,7 @@ module Rubix
       when response.code.to_i >= 500
         raise ConnectionError.new("Too many consecutive failed requests (#{max_attempts}) to the Zabbix API at (#{uri}).")
       else
-        @last_response = Response.new(response)
+        @last_response = response
       end
     end
 
@@ -153,27 +176,136 @@ module Rubix
     #
     # @param [Hash, #to_json] raw_params the complete parameters of the request.
     # @return [Net::HTTP::Response]
-    def send_raw_request raw_params
+    def send_api_request raw_params
       @request_id += 1
       begin
-        raw_response = server.request(raw_post_request(raw_params))
+        raw_response = server.request(raw_api_request(raw_params))
       rescue NoMethodError, SocketError => e
         raise RequestError.new("Could not connect to Zabbix server at #{host_with_port}")
       end
       raw_response
+    end
+
+    # Send a Web request to Zabbix.
+    #
+    # The existing authorization token will be used to emulate a
+    # request sent by a browser.
+    #
+    # Any values in +data+ which are file handles will trigger a
+    # multipart POST request, uploading those files.
+    #
+    # @param [String] verb one of "GET" or "POST"
+    # @param [String] path the path to send the request to
+    # @param [Hash] data the data to include in the request
+    def send_web_request verb, path, data={}
+      # Don't increment this for web requests?
+      # @request_id += 1
+      begin
+        raw_response = server.request(raw_web_request(verb, path, data))
+      rescue NoMethodError, SocketError => e
+        raise RequestError.new("Could not connect to the Zabbix server at #{host_with_port}")
+      end
     end
     
     # Generate the raw POST request to send to the Zabbix API
     #
     # @param [Hash, #to_json] raw_params the complete parameters of the request.
     # @return [Net::HTTP::Post]
-    def raw_post_request raw_params
+    def raw_api_request raw_params
       json_body = raw_params.to_json
       Rubix.logger.log(Logger::DEBUG, "SEND: #{json_body}") if Rubix.logger
       Net::HTTP::Post.new(uri.path).tap do |req|
         req['Content-Type'] = 'application/json-rpc'
         req.body            = json_body
       end
+    end
+
+    # Generate a raw web request to send to the Zabbix web application
+    # as though it came from a browser.
+    #
+    # @param [String] verb the HTTP verb, either "GET" (default) or "POST"
+    # @param [String] path the path on the server to send the request to
+    # @param [Hash]   data the data for the request
+    def raw_web_request verb, path, data={}
+      case
+      when verb == "GET"
+        raw_get_request(path)
+      when verb == "POST" && data.values.any? { |value| value.respond_to?(:read) }
+        raw_multipart_post_request(path, data)
+      when verb == "POST"
+        raw_post_request(path, data)
+      else
+        raise Rubix::RequestError.new("Invalid HTTP verb: #{verb}")
+      end
+    end
+
+    # Generate an authenticated GET request emulating a browser.
+    #
+    # @param [String] path the path to send the request to.
+    # @return [Net::HTTP::Get]
+    def raw_get_request(path)
+      Net::HTTP::Get.new(path).tap do |req|
+        req['Content-Type'] = self.class::CONTENT_TYPE
+        req['Cookie']       = "#{self.class::COOKIE_NAME}=#{CGI::escape(auth.to_s)}"
+      end
+    end
+
+    # Generate an authenticated POST request emulating a browser.  It
+    # is assumed that +data+ is not multipart data.
+    #
+    # @param [String] path the path to send the request to.
+    # @param [Hash] data the data to send
+    # @return [Net::HTTP::Post]
+    def raw_post_request(path, data={})
+      Net::HTTP::Post.new(path).tap do |req|
+        req['Content-Type'] = self.class::CONTENT_TYPE
+        req['Cookie']       = "#{self.class::COOKIE_NAME}=#{CGI::escape(auth.to_s)}"
+        req.body            = formatted_post_body(data)
+      end
+    end
+
+    # Generate an authenticated POST request emulating a browser.
+    # Assumes data is multipart data, with some values being file
+    # handles.
+    #
+    # @param [String] path the path to send the request to.
+    # @param [Hash] data the data to send
+    # @return [Net::HTTP::Post::Multipart]
+    def raw_multipart_post_request(path, data={})
+      require 'net/http/post/multipart'
+      Net::HTTP::Post::Multipart.new(path, wrapped_multipart_post_data(data)).tap do |req|
+        req['Cookie'] = "#{self.class::COOKIE_NAME}=#{CGI::escape(auth.to_s)}"
+      end
+    end
+
+    # Wrap +data+ with +UploadIO+ objects so that it can be properly
+    # handled by the Net::HTTP::Post::Multipart class.
+    #
+    # @param [Hash] data
+    # @return [Hash]
+    def wrapped_multipart_post_data data
+      {}.tap do |wrapped|
+        data.each_pair do |key, value|
+          if value.respond_to?(:read)
+            # We are going to assume it's always XML we're uploading.
+            wrapped[key] = UploadIO.new(value, "application/xml", File.basename(value.path))
+          else
+            wrapped[key] = value
+          end
+        end
+      end
+    end
+
+    # Format +data+ as a POST data string.
+    #
+    # @param [Hash] data
+    # @return [String]
+    def formatted_post_body data
+      [].tap do |pairs|
+        data.each_pair do |key, value|
+          pairs << [key, value].map { |s| CGI::escape(s.to_s) }.join('=')
+        end
+      end.join('&')
     end
 
     # Used for generating helpful error messages.

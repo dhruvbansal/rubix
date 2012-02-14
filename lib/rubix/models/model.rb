@@ -93,6 +93,16 @@ module Rubix
       Rubix.connection && Rubix.connection.request(method, params)
     end
 
+    # Send a web request to the Zabbix web application.  This is just
+    # a convenience method for <tt>Rubix::Connection#web_request</tt>.
+    #
+    # @param [String] verb one of "GET" or "POST"
+    # @param [String] path the path to send the request to
+    # @param [Hash] data the data to include with the request
+    def self.web_request verb, path, data={}
+      Rubix.connection && Rubix.connection.web_request(verb, path, data)
+    end
+
     # Is this a new record?  We can tell because the ID must be blank.
     #
     # @return [true, false]
