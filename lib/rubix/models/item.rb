@@ -63,6 +63,16 @@ module Rubix
     }.freeze
     STATUS_NAMES = STATUS_CODES.invert.freeze
 
+    # The numeric codes for the delta type
+    #
+    # The default will be <tt>:as_is</tt>
+    DELTA_CODES = {
+      :as_is			=> 0,
+      :speed_per_second	=> 1,
+      :simple_change	=> 2
+    }.freeze
+    DELTA_NAMES = DELTA_CODES.invert.freeze
+
     # Return the +value_type+ name (:float, :text, &c.) for a Zabbix
     # item's value type by examining the given +value+.
     def self.value_type_from_value value
@@ -80,7 +90,7 @@ module Rubix
       self::VALUE_CODES[value_type_from_value(value)]
     end
     
-    attr_accessor :key, :description, :units, :multiply_by, :data_type, :history, :trends, :status, :frequency
+    attr_accessor :key, :description, :units, :multiply_by, :data_type, :history, :trends, :status, :frequency, :delta
     attr_writer :type, :value_type
 
     def initialize properties={}
@@ -96,6 +106,7 @@ module Rubix
       self.trends          = properties[:trends]
       self.status          = properties[:status]
       self.frequency       = properties[:frequency]
+  	  self.delta	    	   = properties[:delta]
 
       self.host            = properties[:host]
       self.host_id         = properties[:host_id]
@@ -122,6 +133,10 @@ module Rubix
     def type
       @type ||= :zabbix
     end
+
+  	def delta
+	    @delta ||= :as_is
+  	end
 
     #
     # == Associations ==
@@ -150,6 +165,7 @@ module Rubix
         p[:trends]       = trends.to_i if trends
         p[:status]       = self.class::STATUS_CODES[status] if status
         p[:delay]        = frequency if frequency
+        p[:delta]        = self.class::DELTA_CODES[delta] if delta
         if multiply_by && multiply_by.to_f != 0.0
           p[:multiplier] = 1
           p[:formula]    = multiply_by.to_f
@@ -188,7 +204,8 @@ module Rubix
             :key             => item['key_'],
             :units           => item['units'],
             :frequency       => item['delay'].to_i,
-            :multiply_by     => ((item['multiplier'].to_i == 1 && item['formula'].to_f != 0.0) ? item['formula'].to_f : nil)
+            :multiply_by     => ((item['multiplier'].to_i == 1 && item['formula'].to_f != 0.0) ? item['formula'].to_f : nil),
+	      		:delta			     => DELTA_NAMES[item['delta'].to_i]
           })
     end
 
