@@ -13,6 +13,7 @@ module Rubix
       super(properties)
       @from       = properties[:from]
       @upto       = properties[:upto]
+      @raw_data   = properties[:raw_data]
       
       self.item    = properties[:item]
       self.item_id = properties[:item_id]
@@ -37,6 +38,14 @@ module Rubix
     def upto
       @upto ||= self.class.default_upto
     end
+    
+    def history
+      @history ||= self.class.default_history(item)
+    end
+    
+    def self.default_history item
+      item.respond_to?(:value_type) ? Item::VALUE_CODES[item.value_type] : 3
+    end
 
     def raw_data
       @raw_data ||= []
@@ -60,7 +69,8 @@ module Rubix
       super().merge({
                       :itemids => [options[:item_id].to_s],
                       :time_from => (options[:from] || default_from).to_i.to_s,
-                      :time_till => (options[:upto] || default_upto).to_i.to_s
+                      :time_till => (options[:upto] || default_upto).to_i.to_s,
+                      :history   => (options[:history] || default_history(options[:item])).to_s
                     })
     end
 

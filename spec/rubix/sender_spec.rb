@@ -6,18 +6,16 @@ describe Rubix::Sender do
     @config_file = Tempfile.new('sender', '/tmp')
   end
 
-  describe "running in --fast mode" do
-
-    it "should not attempt to make any calls to the Zabbix API when writing values" do
-      Rubix.connection.should_not_receive(:request)
-      @sender = Rubix::Sender.new(mock_settings('configuration_file' => @config_file.path, 'host' => 'foohost', 'server' => 'fooserver', 'fast' => true, 'sender' => 'echo'))
-      @sender.process_line("foo.bar.baz	123\n")
-      @sender.process_line({:host => 'newhost', :host_groups => 'foobar,baz', :data => [{:key => 'foo.bar.baz', :value => 123}]}.to_json)
-    end
+  it "has sensible defaults" do
+    sender = Rubix::Sender.new(:host => 'foobar')
+    sender.server.should == 'localhost'
+    sender.port.should   == 10051
+    sender.config.should == '/etc/zabbix/zabbix_agentd.conf'
   end
 
-  describe "running in auto-vivify mode" do
+  it "will raise an error without a host" do
+    lambda { Rubix::Sender.new }.should raise_error(Rubix::Error)
   end
-  
+
 end
   

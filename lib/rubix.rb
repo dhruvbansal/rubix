@@ -10,6 +10,7 @@ module Rubix
   autoload :Connection,     'rubix/connection'
   autoload :Response,       'rubix/response'
   autoload :Sender,         'rubix/sender'
+  autoload :AutoSender,     'rubix/auto_sender'
 
   # Set up a <tt>Connection</tt> to a Zabbix API server.
   #

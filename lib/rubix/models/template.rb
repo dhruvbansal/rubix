@@ -67,6 +67,48 @@ module Rubix
             :host_group_ids => template['groups'].map { |group| group['groupid'].to_i }
           })
     end
+
+    #
+    # == Import/Export ==
+    #
+
+    # Options which control the template import process and the Zabbix
+    # keys they need to be mapped to.
+    IMPORT_OPTIONS = {
+      :update_hosts     => 'rules[host][exist]',
+      :add_hosts        => 'rules[host][missed]',
+      :update_items     => 'rules[item][exist]',
+      :add_items        => 'rules[item][missed]',
+      :update_triggers  => 'rules[trigger][exist]',
+      :add_triggers     => 'rules[trigger][missed]',
+      :update_graphs    => 'rules[graph][exist]',
+      :add_graphs       => 'rules[graph][missed]',
+      :update_templates => 'rules[template][exist]'
+    }.freeze
+
+    # Import/update a template from XML contained in an open file
+    # handle +fh+.
+    #
+    # By default all hosts, items, triggers, and graphs the XML
+    # defines will be both added and updated.  (Linked templates will
+    # also be updated.)  This behavior matches the default behavior of
+    # the web interface in Zabbix 1.8.8.
+    #
+    # This can be controlled with options like <tt>:update_hosts</tt>
+    # or <tt>:add_graphs</tt>, all of which default to true.  (Linked
+    # templates are controlled with <tt>:update_templates</tt>.)
+    def self.import fh, options={}
+      response = web_request("POST", "/templates.php", import_options(options).merge(:import_file => fh))
+      File.open('/tmp/output.html', 'w') { |f| f.puts(response.body) }
+    end
+
+    def self.import_options options
+      {}.tap do |o|
+        self::IMPORT_OPTIONS.each_pair do |name, zabbix_name|
+          o[zabbix_name] = 'yes' unless options[name] == false
+        end
+      end
+    end
     
   end
 end
