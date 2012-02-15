@@ -5,7 +5,7 @@ describe "TimeSeries" do
   before do
     integration_test
     @host_group = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1'))
-    @host       = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group]))
+    @host       = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group]))        
   end
 
   after do
@@ -17,6 +17,10 @@ describe "TimeSeries" do
     it "should set a default timeframe" do
       Rubix::TimeSeries.new.from.should_not be_nil
       Rubix::TimeSeries.new.upto.should_not be_nil
+    end
+    
+    it "should set a default item type (history)" do
+      Rubix::TimeSeries.new.history.should_not be_nil
     end
 
     it "should accept a given timeframe when querying" do
@@ -41,13 +45,14 @@ describe "TimeSeries" do
 
     before do
       @item = ensure_save(Rubix::Item.new(:host_id => @host.id, :key => 'foo.bar.baz', :value_type => :unsigned_int, :description => "rubix item description"))
+      @history = create_history(@item)
     end
 
     it "should parse the results properly" do
       @ts = Rubix::TimeSeries.find(:item_id => @item.id)
       @ts.should_not be_nil
-      @ts.should_receive(:raw_data).and_return([{'clock' => '1327543429', 'value' => '3'}, {'clock' => '1327543430'}])
-      @ts.parsed_data.should == [{'time' => Time.at(1327543429), 'value' => 3}]
+      @ts.raw_data.should == @history.reverse
+      @ts.parsed_data.should == @history.reverse.collect{|history| { 'time' => Time.at(history["clock"].to_i), 'value' => history["value"].to_i } }
     end
 
   end

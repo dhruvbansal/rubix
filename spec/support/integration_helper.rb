@@ -1,8 +1,12 @@
 module Rubix
   module IntegrationHelper
-    
+
     def integration_test
-      pending("A live Zabbix API to test against") unless $RUBIX_INTEGRATION_TEST
+      if $RUBIX_INTEGRATION_TEST
+        Rubix.connect($RUBIX_INTEGRATION_TEST['url'], $RUBIX_INTEGRATION_TEST['username'], $RUBIX_INTEGRATION_TEST['password'])
+      else
+        pending("A live Zabbix API to test against")
+      end
     end
 
     def ensure_save(obj)
@@ -42,6 +46,14 @@ module Rubix
         raise e
       end
     end
+    
+    def create_history item
+      (1..10).to_a.collect do |i|
+        history = { "itemid" => item.id.to_s, "clock" => (Time.now.to_i - 5*i).to_s, "value" => rand(100).to_s }
+        $RUBIX_MYSQL_CLIENT.query("INSERT INTO history_uint (#{history.keys.join(', ')}) VALUES (#{history.values.join(', ')})")
+        history
+      end
+    end
 
     def self.setup_integration_tests test_yml_path
       return unless File.exist?(test_yml_path)
@@ -61,10 +73,10 @@ module Rubix
 
       truncate_all_tables
 
-      $RUBIX_INTEGRATION_TEST = true
+      $RUBIX_INTEGRATION_TEST = api_connection
     end
 
-    RUBIX_TABLES_TO_TRUNCATE = %w[applications groups hostmacro hosts hosts_groups hosts_profiles hosts_profiles_ext hosts_templates items items_applications profiles triggers trigger_depends]
+    RUBIX_TABLES_TO_TRUNCATE = %w[applications groups hostmacro hosts hosts_groups hosts_profiles hosts_profiles_ext hosts_templates items items_applications profiles triggers trigger_depends history sessions media_type]
     
     def self.truncate_all_tables
       return unless $RUBIX_INTEGRATION_TEST
@@ -73,6 +85,10 @@ module Rubix
 
     def truncate_all_tables
       IntegrationHelper.truncate_all_tables
+    end
+
+    def data_path *args
+      File.join(File.expand_path('../../data', __FILE__), *args)
     end
     
   end

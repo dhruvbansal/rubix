@@ -93,6 +93,16 @@ module Rubix
       Rubix.connection && Rubix.connection.request(method, params)
     end
 
+    # Send a web request to the Zabbix web application.  This is just
+    # a convenience method for <tt>Rubix::Connection#web_request</tt>.
+    #
+    # @param [String] verb one of "GET" or "POST"
+    # @param [String] path the path to send the request to
+    # @param [Hash] data the data to include with the request
+    def self.web_request verb, path, data={}
+      Rubix.connection && Rubix.connection.web_request(verb, path, data)
+    end
+
     # Is this a new record?  We can tell because the ID must be blank.
     #
     # @return [true, false]
@@ -180,7 +190,7 @@ module Rubix
       return false unless before_update
       response = update_request
       case
-      when response.has_data? && response.result.values.first.map(&:to_i).include?(id)
+      when response.has_data? && (response.result.values.first == true || response.result.values.first.map(&:to_i).include?(id))
         info("Updated Zabbix #{resource_name}")
         true
       when response.has_data?
@@ -362,5 +372,20 @@ module Rubix
       end
     end
 
+    def self.list ids
+      return [] if ids.nil? || ids.empty?
+      response = request("#{zabbix_name}.get", get_params.merge((id_field + 's') => ids))
+      case
+      when response.has_data?
+        response.result.map do |obj|
+          build(obj)
+        end
+      when response.success?
+        []
+      else
+        error("Error listing Zabbix #{resource_name}s: #{response.error_message}")
+      end
+    end
+    
   end
 end

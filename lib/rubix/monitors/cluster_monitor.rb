@@ -1,84 +1,85 @@
 module Rubix
   
-  # A generic monitor class for constructing Zabbix monitors that
-  # monitor whole clusters.
+  # A module for building monitors which measure items for several
+  # hosts in a cluster as well as items for the cluster itself.
   #
-  # This class handles the low-level logic of finding a set of nodes and
-  # then grouping them by cluster.
+  # This module assumes that an existing +hosts+ method returns an
+  # Array of Zabbix hosts that can be grouped into clusters.
   #
-  # It's still up to a subclass to determine how to make a measurement
-  # on the cluster.
-  #
-  # Here's an example of a script which finds the average uptime of
-  # nodes a value of 'bar' set for property 'foo', grouped by cluster.
+  # Here's an example:
   #
   #   #!/usr/bin/env ruby
-  #   # in cluster_uptime_monitor
   #   
-  #   class ClusterUptimeMonitor < Rubix::ClusterMonitor
-  #   
-  #     def node_query
-  #       'role:nginx'
-  #     end
-  #     
+  #   class ClusterPingMonitor < Rubix::Monitor
+  #
+  #     include Rubix::ClusterMonitor
+  #
   #     def measure_cluster cluster_name
-  #       total_seconds = nodes_by_cluster[cluster_name].inject(0.0) do |sum, node|
-  #         sum += node['uptime_seconds']
+  #       total_ping = 0.0
+  #       num_hosts  = 0
+  #       hosts_by_cluster[cluster_name].each do |host|
+  #         total_ping += measure_host(host)
+  #         num_hosts  += 1
   #       end
-  #       average_uptime = total_seconds.to_f / nodes_by_cluster[cluster_name].size.to_f
-  #       write(:hostname => 'cluster_name') do |data|
-  #         data << ['uptime.average', average_uptime]
-  #       end
+  #       write [cluster_name, 'average_ping', total_ping / num_hosts] unless num_hosts == 0
+  #     end
+  #
+  #     def measure_host host
+  #       ping = measure_ping_to(host.ip)
+  #       write [host.name, 'ping', ping]
+  #       ping # return this so the measure_cluster method can use it
   #     end
   #   end
   #   
-  #   ClusterUptimeMonitor.run if $0 == __FILE__
+  #   ClusterPingMonitor.run if $0 == __FILE__
   #
-  # See documentation for Rubix::Monitor to understand how to run this
-  # script.
-  class ClusterMonitor < ChefMonitor
+  # You may want to override the +cluster_name_from_host+ method.  By
+  # defaul it assumes that hosts in Zabbix are named
+  # 'cluster-facet-index', a la Ironfan.
+  module ClusterMonitor
 
-    attr_reader :private_ips_by_cluster, :nodes_by_cluster
+    # The name of the default cluster.
+    DEFAULT_CLUSTER = 'All Hosts'
+
+    attr_reader :hosts_by_cluster
+
+    def default_cluster
+      ::Rubix::ClusterMonitor::DEFAULT_CLUSTER
+    end
 
     def initialize settings
       super(settings)
-      group_nodes_by_cluster
+      @hosts_by_cluster = {}
+      group_hosts_by_cluster
     end
 
-    def node_query
-      ''
-    end
-
-    def matching_chef_nodes
-      search_nodes(node_query)
-    end
-
-    def group_nodes_by_cluster
-      @private_ips_by_cluster = {}
-      @nodes_by_cluster       = {}
-      matching_chef_nodes.first.each do |node|
-        @nodes_by_cluster[node['cluster_name']] ||= []
-        @nodes_by_cluster[node['cluster_name']] << node
-        
-        @private_ips_by_cluster[node['cluster_name']] ||= []
-        @private_ips_by_cluster[node['cluster_name']] << node['ipaddress']
-      end
-    end
-    
-    def clusters
-      private_ips_by_cluster.keys
-    end
-    
     def measure
       clusters.each do |cluster_name|
         measure_cluster(cluster_name)
       end
     end
 
-    def measure_cluster cluster_name
-      raise NotImplementedError.new("Override the 'measure_cluster' method to make measurements of a given cluster.")
+    def group_hosts_by_cluster
+      hosts.each do |host|
+        cluster_name = cluster_name_from_host(host)
+        @hosts_by_cluster[cluster_name] ||= []
+        @hosts_by_cluster[cluster_name] << host
+      end
+    end
+
+    def cluster_name_from_host host
+      return default_cluster if host.name.nil? || host.name.empty?
+      parts = host.name.split("-")
+      if parts.size == 3
+        parts.first
+      else
+        default_cluster
+      end
+    end
+    
+    def clusters
+      @hosts_by_cluster.keys
     end
     
   end
-
 end

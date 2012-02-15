@@ -1,5 +1,4 @@
 require 'configliere'
-require 'open3'
 
 module Rubix
 
@@ -56,7 +55,8 @@ module Rubix
     #
 
     def self.default_settings
-      Configliere::Param.new.tap do |s|
+      @default_settings ||= Configliere::Param.new.tap do |s|
+        
         s.use :commandline
         
         s.define :loop,   :description => "Run every this many seconds",                         :required => false, :type => Integer
@@ -64,10 +64,10 @@ module Rubix
         # The following options are only used when sending directly
         # with <tt>zabbix_sender</tt>
         s.define :server, :description => "IP of a Zabbix server",                               :required => false, :default => 'localhost'
-        s.define :port,   :description => "Port of a Zabbix server",                             :required => false, :type => Integer,  :default => 10051
-        s.define :host,   :description => "Name of a Zabbix host",                               :required => false
+        s.define :port,   :description => "Port of a Zabbix server",                             :required => false, :default => 10051, :type => Integer
+        s.define :host,   :description => "Name of a Zabbix host",                               :required => false, :default => ENV["HOSTNAME"]
         s.define :config, :description => "Local Zabbix agentd configuration file",              :required => false, :default => "/etc/zabbix/zabbix_agentd.conf"
-        s.define :send,   :description => "Send data directlyt to Zabbix using 'zabbix_sender'", :required => false, :type => :boolean, :default => false
+        s.define :send,   :description => "Send data directlyt to Zabbix using 'zabbix_sender'", :required => false, :default => false, :type => :boolean
       end
     end
 
@@ -186,22 +186,14 @@ module Rubix
     end
 
     def sender?
-      if settings[:send] == true
-        %w[server port host config].each do |var|
-          raise Rubix::Error.new("Cannot send values to Zabbix: Set value of --#{var}.") if settings[var.to_sym].nil?
-        end
-        true
-      else
-        false
-      end
+      settings[:send] == true
     end
     
     def output
       return @output if @output
       case
       when sender?
-        @sender_stdin, @sender_stdout, @sender_stderr, @sender_wait_thr = Open3.popen3("zabbix_sender --zabbix-server #{settings[:server]} --host #{settings[:host]}")
-        @output = @sender_stdin
+        @output = Sender.new(:host => settings[:host], :server => settings[:server], :port => settings[:port], :config => settings[:config])
       when stdout?
         @output = $stdout
       when fifo?
@@ -220,9 +212,6 @@ module Rubix
       return unless output
       output.flush
       case
-      when sender?
-        # puts @sender_stdout.read
-        [@sender_stdin, @sender_stdout, @sender_stderr].each { |fh| fh.close } if sender?
       when stdout?
         return
       else

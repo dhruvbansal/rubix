@@ -5,7 +5,6 @@ describe "Hosts" do
   before do
     integration_test
     @host_group_1 = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1'))
-
   end
 
   after do
@@ -18,6 +17,14 @@ describe "Hosts" do
       Rubix::Host.find(:name => 'rubix_spec_host_1').should be_nil
     end
 
+    it "returns an empty array when listing without IDs" do
+      Rubix::Host.list([1,2,3]).should == []
+    end
+
+    it "returns an empty array when listing with IDs" do
+      Rubix::Host.list([1,2,3]).should == []
+    end
+    
     it "can be created" do
       host = Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group_1])
       host.save.should be_true
@@ -32,6 +39,13 @@ describe "Hosts" do
       @host         = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1',         :host_groups => [@host_group_1]))
       @template_1   = ensure_save(Rubix::Template.new(:name => 'rubix_spec_template_1', :host_groups => [@host_group_2]))
       @template_2   = ensure_save(Rubix::Template.new(:name => 'rubix_spec_template_2', :host_groups => [@host_group_2]))
+    end
+
+    it "can be listed by ID" do
+      hosts = Rubix::Host.list([@host.id])
+      hosts.should_not be_nil
+      hosts.should_not be_empty
+      hosts.first.name.should == @host.name
     end
 
     it "can have its name changed" do
@@ -78,4 +92,5 @@ describe "Hosts" do
     end
 
   end
+  
 end
