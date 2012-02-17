@@ -24,20 +24,18 @@ module Rubix
       :proxy_passive => 6
     }.freeze
     STATUS_NAMES = STATUS_CODES.invert.freeze
-    
-    attr_accessor :name, :ip, :port, :profile, :dns, :status
-    attr_writer   :use_ip, :monitored
+
+    zabbix_attr :name
+    zabbix_attr :ip
+    zabbix_attr :port
+    zabbix_attr :profile
+    zabbix_attr :dns
+    zabbix_attr :status
+    zabbix_attr :use_ip,    :default => true
+    zabbix_attr :monitored, :default => true
     
     def initialize properties={}
       super(properties)
-      @name        = properties[:name]
-      @ip          = properties[:ip]
-      @port        = properties[:port]
-      @profile     = properties[:profile]
-      @monitored   = properties[:monitored]
-      @dns         = properties[:dns]
-      @use_ip      = properties[:use_ip]
-      @status      = properties[:status]
 
       self.host_group_ids = properties[:host_group_ids]
       self.host_groups    = properties[:host_groups]

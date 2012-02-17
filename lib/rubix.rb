@@ -42,6 +42,20 @@ module Rubix
     @connection = connection
   end
 
+  # Is Rubix presently connected to a Zabbix server?
+  #
+  # @return [true, false]
+  def self.connected?
+    (!! connection)
+  end
+
+  # Is Rubix presently connected and authorized with a Zabbix server?
+  #
+  # @return [true, false]
+  def self.authorized?
+    connection && connection.authorized?
+  end
+
   # Return the current connection to a Zabbix API.  Useful for
   # directly sending queries.
   #
@@ -71,5 +85,8 @@ module Rubix
   # from being saved by the Zabbix API (i.e. - no host group for a
   # host).
   ValidationError     = Class.new(Error)
+
+  # Given an incorrect argument.
+  ArgumentError       = Class.new(Error)
   
 end

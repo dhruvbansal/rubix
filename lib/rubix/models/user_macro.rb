@@ -5,23 +5,22 @@ module Rubix
     #
     # == Properties & Finding ==
     #
+
+    attr_reader :name
+    def set_name n, validate=true
+      return if n.nil? || n.empty?
+      raise ValidationError.new("Cannot change the name of a UserMacro once it's created.") if validate && @name && (!new_record?)
+      @name = n
+    end
     
-    attr_accessor :value
+    zabbix_attr :value, :required => true
     
     def initialize properties={}
       super(properties)
-      self.name  = properties[:name] || self.class.unmacro_name(properties[:macro])
-      @value = properties[:value]
-
+      set_name(properties[:name]  || self.class.unmacro_name(properties[:macro]), false)
+      
       self.host    = properties[:host]
       self.host_id = properties[:host_id]
-    end
-
-    attr_reader :name
-    def name= n
-      return if n.nil? || n.empty?
-      raise ValidationError.new("Cannot change the name of a UserMacro once it's created.") if @name && (!new_record?)
-      @name = n
     end
 
     def self.unmacro_name name
@@ -50,15 +49,6 @@ module Rubix
     
     include Associations::BelongsToHost
 
-    #
-    # == Validation ==
-    #
-    
-    def validate
-      raise ValidationError.new("A user macro must have both a 'name' and a 'value'") if name.nil? || name.strip.empty? || value.nil? || value.strip.empty?
-      true
-    end
-    
     #
     # == Requests ==
     #

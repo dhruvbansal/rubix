@@ -8,13 +8,11 @@ module Rubix
 
     def initialize properties={}
       super(properties)
-      @name    = properties[:name]
-      
       self.host_id = properties[:host_id]
       self.host    = properties[:host]
     end
     
-    attr_accessor :name
+    zabbix_attr :name, :required => true
 
     #
     # == Associations ==

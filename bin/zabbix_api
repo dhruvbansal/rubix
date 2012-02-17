@@ -16,41 +16,59 @@ Settings.define :password,           :description => "Password for the Zabbix AP
 Settings.define :server_error_sleep, :description => "Seconds to sleep after a 50x error from the server",      :required => true, :type => Integer, :default => 1
 
 def Settings.usage
-  %Q{usage: #{raw_script_name} [...--param=val...] METHOD PARAMS}
+  %Q{usage: #{raw_script_name} [...--param=val...] [--shell || METHOD PARAMS]}
+end
+
+def bail msg=nil
+  $stderr.puts msg if msg
+  exit(1)
+end
+
+def connect
+  Rubix.connect(Settings[:url], Settings[:username], Settings[:password])  
+end
+
+def perform_query
+  begin
+    method   = Settings.rest[0]
+    params   = JSON.parse(Settings.rest[1])
+    response = Rubix.connection.request(method, params)
+    
+    if Settings[:pretty]
+      puts JSON.pretty_generate(response.parsed)
+    else
+      puts response.parsed.to_json
+    end
+    exit(0)
+  rescue JSON::ParserError => e
+    bail("Invalid JSON -- #{e.message}")
+  rescue Rubix::Error => e
+    bail($e.message)
+  end
+end
+  
+def drop_into_a_shell
+  require 'irb'
+  ARGV.clear
+  include Rubix
+  IRB.start
 end
 
 begin
   Settings.resolve!
 rescue RuntimeError => e
-  puts e.message
   Settings.dump_help
-  exit(1)
+  bail(e.message)
+end
+
+begin
+  connect
+rescue Rubix::Error => e
+  bail("Could not connect to Zabbix API: #{e.message}")
 end
 
 if Settings.rest.size < 2
-  Settings.dump_help
-  exit(1)
-end
-
-method      = Settings.rest[0]
-json_params = Settings.rest[1]
-
-begin
-  Rubix.connect(Settings[:url], Settings[:username], Settings[:password])
-  
-  params   = JSON.parse(json_params)
-  response = Rubix.connection.request(method, params)
-  
-  if Settings[:pretty]
-    puts JSON.pretty_generate(response.parsed)
-  else
-    puts response.parsed.to_json
-  end
-  
-rescue JSON::ParserError => e
-  puts "Invalid JSON -- #{e.message}"
-  exit(1)
-rescue Rubix::Error => e
-  puts e.message
-  exit(1)
+  drop_into_a_shell
+else
+  perform_query
 end

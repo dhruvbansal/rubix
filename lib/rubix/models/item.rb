@@ -79,24 +79,21 @@ module Rubix
     def self.value_code_from_value value
       self::VALUE_CODES[value_type_from_value(value)]
     end
-    
-    attr_accessor :key, :description, :units, :multiply_by, :data_type, :history, :trends, :status, :frequency
-    attr_writer :type, :value_type
+
+    zabbix_attr :type,       :default => :zabbix
+    zabbix_attr :value_type, :default => :character
+    zabbix_attr :data_type,  :default => :decimal
+    zabbix_attr :key,        :required => true
+    zabbix_attr :description
+    zabbix_attr :units
+    zabbix_attr :multiply_by
+    zabbix_attr :history
+    zabbix_attr :trends
+    zabbix_attr :status
+    zabbix_attr :frequency
 
     def initialize properties={}
       super(properties)
-      self.key             = properties[:key]
-      self.description     = properties[:description]
-      self.type            = properties[:type]
-      self.units           = properties[:units]
-      self.multiply_by     = properties[:multiply_by]
-      self.value_type      = properties[:value_type]
-      self.data_type       = properties[:data_type]
-      self.history         = properties[:history]
-      self.trends          = properties[:trends]
-      self.status          = properties[:status]
-      self.frequency       = properties[:frequency]
-
       self.host            = properties[:host]
       self.host_id         = properties[:host_id]
 
@@ -109,18 +106,6 @@ module Rubix
 
     def resource_name
       "#{self.class.resource_name} #{self.key || self.id}"
-    end
-
-    def value_type
-      @value_type ||= :character
-    end
-
-    def data_type
-      @data_type ||= :decimal
-    end
-
-    def type
-      @type ||= :zabbix
     end
 
     #

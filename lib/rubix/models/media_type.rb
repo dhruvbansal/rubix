@@ -18,25 +18,23 @@ module Rubix
     # == Properties & Finding ==
     #
 
-    attr_accessor :description, :server, :helo, :email, :path, :modem, :username, :password
-    
-    attr_writer   :type
-    def type
-      @type ||= :script
-    end
+    zabbix_attr :type, :default => :script, :required => true
+    zabbix_attr :name
 
-    def initialize properties={}
-      super(properties)
-      self.description = properties[:description]
-      self.type        = properties[:type]
-      self.server      = properties[:server]
-      self.helo        = properties[:helo]
-      self.email       = properties[:email]
-      self.path        = properties[:path]
-      self.modem       = properties[:modem]
-      self.username    = properties[:username]
-      self.password    = properties[:password]
-    end
+    # email
+    zabbix_attr :server
+    zabbix_attr :helo
+    zabbix_attr :email
+
+    # script
+    zabbix_attr :path
+
+    # sms
+    zabbix_attr :modem
+    
+    # jabber
+    zabbix_attr :username
+    zabbix_attr :password
     
     #
     # == Requests ==
@@ -44,7 +42,7 @@ module Rubix
 
     def create_params
       {
-        :description => description,
+        :description => name,
         :type        => TYPE_CODES[type]
       }.tap do |p|
         case type
@@ -64,14 +62,14 @@ module Rubix
     end
 
     def self.find_params options={}
-      get_params.merge(:filter => {id_field => options[:id], :description => options[:description]})
+      get_params.merge(:filter => {id_field => options[:id], :description => options[:name]})
     end
 
     def self.build media_type
       new({
             :id          => media_type[id_field].to_i,
             :type        => self::TYPE_NAMES[media_type['type'].to_i],
-            :description => media_type['description'],
+            :name        => media_type['description'],
             :server      => media_type['smtp_server'],
             :helo        => media_type['smtp_helo'],
             :email       => media_type['smtp_email'],

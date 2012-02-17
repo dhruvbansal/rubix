@@ -70,6 +70,9 @@ module Rubix
     # @option properties [Fixnum] id the ID of the resource in Zabbix (typically blank for a new resource)
     def initialize properties={}
       @properties = properties
+      self.class.properties.keys.each do |property|
+        self.send("#{property}=", properties[property])
+      end
       @id         = properties[:id]
     end
 
@@ -126,7 +129,17 @@ module Rubix
     #
     # @return [true, false]
     def validate
+      self.class.properties.each_pair do |property, options|
+        raise ValidationError.new("A #{self.class.resource_name} must have a #{property}") if options[:required] && (self.send(property).nil? || self.send(property).empty?)
+      end
       true
+    end
+
+    # Return this object as a Hash.
+    #
+    # @return [Hash]
+    def to_hash
+      update_params
     end
 
     #
@@ -161,6 +174,12 @@ module Rubix
         error("Error creating Zabbix #{resource_name}: #{response.error_message}")
         return false
       end
+      after_create
+    end
+
+    # Run this hook after creating a new resource.
+    def after_create
+      true
     end
 
     #
@@ -171,7 +190,11 @@ module Rubix
     #
     # @return [Hash]
     def update_params
-      create_params.merge({id_field => id})
+      if id
+        create_params.merge({id_field => id})
+      else
+        create_params
+      end
     end
 
     # Send a request to update this resource.
@@ -372,6 +395,10 @@ module Rubix
       end
     end
 
+    #
+    # == List ==
+    #
+
     def self.list ids
       return [] if ids.nil? || ids.empty?
       response = request("#{zabbix_name}.get", get_params.merge((id_field + 's') => ids))
@@ -384,6 +411,31 @@ module Rubix
         []
       else
         error("Error listing Zabbix #{resource_name}s: #{response.error_message}")
+      end
+    end
+
+    #
+    # == Helpers ==
+    #
+
+    def self.properties
+      @properties ||= {}
+    end
+
+    def self.zabbix_attr name, options={}
+      name = name.to_s.to_sym
+      @properties     ||= {}
+      @properties[name] = options
+      
+      if options[:default].nil?
+        attr_accessor name
+      else
+        attr_writer name
+        define_method name do
+          current_value = instance_variable_get("@#{name}")
+          return current_value unless current_value.nil?
+          instance_variable_set("@#{name}", options[:default])
+        end
       end
     end
     

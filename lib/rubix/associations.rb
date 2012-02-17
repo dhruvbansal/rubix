@@ -7,11 +7,17 @@ module Rubix
     autoload :HasManyUserMacros,    'rubix/associations/has_many_user_macros'
     autoload :HasManyApplications,  'rubix/associations/has_many_applications'
     autoload :HasManyItems,         'rubix/associations/has_many_items'
+    autoload :HasManyUsers,         'rubix/associations/has_many_users'
+    autoload :HasManyUserGroups,    'rubix/associations/has_many_user_groups'
+    autoload :HasManyConditions,    'rubix/associations/has_many_conditions'
     
     autoload :BelongsToHost,        'rubix/associations/belongs_to_host'
     autoload :BelongsToTemplate,    'rubix/associations/belongs_to_template'
     autoload :BelongsToItem,        'rubix/associations/belongs_to_item'
-    
+    autoload :BelongsToAction,      'rubix/associations/belongs_to_action'
+    autoload :BelongsToUser,        'rubix/associations/belongs_to_user'
+    autoload :BelongsToUserGroup,   'rubix/associations/belongs_to_user_group'
+    autoload :BelongsToMediaType,   'rubix/associations/belongs_to_media_type'
   end
 end
 

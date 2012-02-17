@@ -16,29 +16,10 @@ module Rubix
     # == Properties & Finding ==
     #
 
-    attr_accessor :name, :command
-    
-    attr_writer   :access
-    def access
-      @access ||= :read
-    end
-    
-    def initialize properties={}
-      super(properties)
-      self.name    = properties[:name]
-      self.command = properties[:command]
-      self.access  = properties[:access]
-    end
+    zabbix_attr :name,    :required => true
+    zabbix_attr :command, :required => true
+    zabbix_attr :access,  :default => :read
 
-    #
-    # == Validation == 
-    #
-
-    def validate
-      raise ValidationError.new("A script must have a command.") if command.nil? || command.empty?
-      true
-    end
-    
     #
     # == Requests ==
     #

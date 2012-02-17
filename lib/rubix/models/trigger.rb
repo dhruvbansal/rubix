@@ -22,18 +22,15 @@ module Rubix
     }.freeze
     STATUS_CODES = STATUS_NAMES.invert.freeze
     
-    attr_accessor :description, :url, :status, :priority, :comments
-    attr_reader   :expression
+    zabbix_attr :description
+    zabbix_attr :url
+    zabbix_attr :status
+    zabbix_attr :priority
+    zabbix_attr :comments
     
     def initialize properties={}
       super(properties)
-      @description = properties[:description]
-      @url         = properties[:url]
-      @status      = properties[:status]
-      @priority    = properties[:priority]
-      @comments    = properties[:comments]
-
-      self.expression  = properties[:expression]
+      self.expression = properties[:expression]
       
       self.host     = properties[:host]
       self.template = properties[:template]
@@ -45,7 +42,9 @@ module Rubix
       self.item_ids = properties[:item_ids]
     end
 
+    attr_reader :expression
     def expression= e
+      return unless e
       if e =~ %r!^\{(.*)\}!
         trigger_condition = $1
         if trigger_condition && trigger_condition =~ /:/

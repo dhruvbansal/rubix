@@ -8,14 +8,11 @@ module Rubix
 
     def initialize properties={}
       super(properties)
-      @name     = properties[:name]
-      
       self.host_ids = properties[:host_ids]
       self.hosts    = properties[:hosts]
     end
     
-    attr_accessor :name
-
+    zabbix_attr :name, :required => true
     
     def self.id_field
       'groupid'

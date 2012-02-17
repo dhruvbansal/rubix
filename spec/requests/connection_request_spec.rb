@@ -15,7 +15,7 @@ describe Rubix::Connection do
     response.should_not be_nil
     response.code.to_i.should == 200
     response.body.should_not include('guest')
-    response.body.should     include($RUBIX_INTEGRATION_TEST['username'])
+    response.body.should     include(Rubix::IntegrationHelper::INTEGRATION_USER)
   end
 
   it "can perform an authorized POST request to the homepage" do
@@ -23,7 +23,7 @@ describe Rubix::Connection do
     response.should_not be_nil
     response.code.to_i.should == 200
     response.body.should_not include('guest')
-    response.body.should     include($RUBIX_INTEGRATION_TEST['username'])
+    response.body.should     include(Rubix::IntegrationHelper::INTEGRATION_USER)
   end
 
   it "can perform an authorized multipart POST request to the homepage" do
@@ -31,7 +31,7 @@ describe Rubix::Connection do
     response.should_not be_nil
     response.code.to_i.should == 200
     response.body.should_not include('guest')
-    response.body.should     include($RUBIX_INTEGRATION_TEST['username'])
+    response.body.should     include(Rubix::IntegrationHelper::INTEGRATION_USER)
   end
   
 end
