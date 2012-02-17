@@ -3,19 +3,19 @@ module Rubix
   class Medium < Model
 
     # Numeric codes that correspond to accepting triggers that are any
-    # priority less than or equal to that listed.  More fine grained
-    # control is possible, i.e. - accepting :not_classified and
-    # :wanring triggers but rejejcting :information triggers.  In the
-    # interests of simplicity, we avoid exposing that degree of
+    # priority greater than or equal to that listed.  More fine
+    # grained control is possible, i.e. - accepting :not_classified
+    # and :warning triggers but rejecting :information triggers.  In
+    # the interests of simplicity, we avoid exposing that degree of
     # freedom here.
     PRIORITY_CODES = {
       :none           => 0,
-      :not_classified => 1,
-      :information    => 3,
-      :warning        => 7,
-      :average        => 15,
-      :high           => 31,
-      :disaster       => 63,
+      :not_classified => 63,
+      :information    => 62,
+      :warning        => 60,
+      :average        => 56,
+      :high           => 48,
+      :disaster       => 32,
       :all            => 63,
       nil             => 63
     }.freeze
