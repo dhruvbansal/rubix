@@ -8,7 +8,7 @@ module Rubix
     # and :warning triggers but rejecting :information triggers.  In
     # the interests of simplicity, we avoid exposing that degree of
     # freedom here.
-    PRIORITY_CODES = {
+    zabbix_define :PRIORITY, {
       :none           => 0,
       :not_classified => 63,
       :information    => 62,
@@ -18,8 +18,7 @@ module Rubix
       :disaster       => 32,
       :all            => 63,
       nil             => 63
-    }.freeze
-    PRIORITY_NAMES = PRIORITY_CODES.invert.freeze
+    }
 
     #
     # == Properties & Finding ==
@@ -32,7 +31,7 @@ module Rubix
 
     attr_writer :severity
     def severity
-      @severity ||= self.class::PRIORITY_CODES[priority]
+      @severity ||= self.class::PRIORITY_CODES[(priority || :all)]
     end
 
     def self.id_field
@@ -65,7 +64,7 @@ module Rubix
         :userid      => user_id,
         :sendto      => address,
         :active      => (enabled ? 0 : 1),
-        :severity    => (severity || self.class::PRIORITY_CODES[priority]),
+        :severity    => (severity || self.class::PRIORITY_CODES[(priority || :all)]),
         :period      => timeframe
       }
     end

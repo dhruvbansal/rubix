@@ -6,21 +6,19 @@ module Rubix
     # == Properties & Finding ==
     #
 
-    PRIORITY_NAMES = {
+    zabbix_define :PRIORITY, {
       :not_classified => 0,
       :information    => 1,
       :warning        => 2,
       :average        => 3,
       :high           => 4,
       :disaster       => 5
-    }.freeze
-    PRIORITY_CODES = PRIORITY_NAMES.invert.freeze
+    }
 
-    STATUS_NAMES = {
+    zabbix_define :STATUS, {
       :enabled  => 0,
       :disabled => 1
-    }.freeze
-    STATUS_CODES = STATUS_NAMES.invert.freeze
+    }
     
     zabbix_attr :description
     zabbix_attr :url
@@ -59,6 +57,10 @@ module Rubix
       @expression = e
     end
 
+    def resource_name
+      "#{self.class.resource_name} #{self.description || self.id}"
+    end
+
     #
     # == Associations ==
     #
@@ -76,8 +78,8 @@ module Rubix
         :templateid   => (template_id || host_id),
         :description  => (description || 'Unknown'),
         :expression   => expression,
-        :priority     => self.class::PRIORITY_NAMES[priority],
-        :status       => self.class::STATUS_NAMES[status],
+        :priority     => self.class::PRIORITY_CODES[priority],
+        :status       => self.class::STATUS_CODES[status],
         :comments     => comments,
         :url          => url
       }
@@ -110,8 +112,8 @@ module Rubix
             :expression      => trigger['expression'],
             :comments        => trigger['comments'],
             :url             => trigger['url'],
-            :status          => STATUS_CODES[trigger['status'].to_i],
-            :priority        => PRIORITY_CODES[trigger['priority'].to_i],
+            :status          => STATUS_NAMES[trigger['status'].to_i],
+            :priority        => PRIORITY_NAMES[trigger['priority'].to_i],
             :item_ids        => (trigger['items'] || []).map { |item| item['itemid'].to_i }
           }.merge(host_or_template_params_from_id(trigger['templateid'].to_i)))
     end

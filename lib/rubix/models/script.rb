@@ -6,11 +6,10 @@ module Rubix
     # a host.
     #
     # Default is 'read'.
-    ACCESS_CODES = {
+    zabbix_define :ACCESS, {
       :read  => 2,
       :write => 3
-    }.freeze
-    ACCESS_NAMES = ACCESS_CODES.invert.freeze
+    }
 
     #
     # == Properties & Finding ==

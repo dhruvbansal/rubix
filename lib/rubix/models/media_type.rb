@@ -5,14 +5,13 @@ module Rubix
     # The numeric codes corresponding to each media type.
     #
     # The default will be 'script'.
-    TYPE_CODES = {
+    zabbix_define :TYPE, {
       :email      => 0,
       :script     => 1,
       :sms        => 2,
       :jabber     => 3,
       :ez_texting => 100
-    }.freeze
-    TYPE_NAMES = TYPE_CODES.invert.freeze
+    }
 
     #
     # == Properties & Finding ==

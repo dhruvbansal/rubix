@@ -3,12 +3,11 @@ module Rubix
   class Action < Model
 
     # Numeric codes for the event source.  Default will be 'triggers'.
-    EVENT_SOURCE_CODES = {
+    zabbix_define :EVENT_SOURCE, {
       :triggers          => 0,
       :discovery         => 1,
       :auto_registration => 2
-    }.freeze
-    EVENT_SOURCE_NAMES = EVENT_SOURCE_CODES.invert.freeze
+    }
 
     # The default subject for messages.
     MESSAGE_SUBJECT = "{TRIGGER.NAME}: {TRIGGER.STATUS}"

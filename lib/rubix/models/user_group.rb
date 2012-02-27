@@ -4,12 +4,11 @@ module Rubix
 
     # Numeric codes for the types of access allowed to the GUI for
     # users in the group.  Default is, well, 'default'.
-    GUI_ACCESS_CODES = {
+    zabbix_define :GUI_ACCESS, {
       :default  => 0,
       :internal => 1,
       :disabled => 2
-    }.freeze
-    GUI_ACCESS_NAMES = GUI_ACCESS_CODES.invert.freeze
+    }
 
     #
     # == Properties & Finding ==

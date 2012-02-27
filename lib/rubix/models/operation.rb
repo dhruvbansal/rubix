@@ -3,7 +3,7 @@ module Rubix
   class Operation < Model
 
     # Numeric codes for the action's type.
-    TYPE_CODES = {
+    zabbix_define :TYPE, {
       :message           => 0,
       :command           => 1,
       :host_add          => 2,
@@ -14,16 +14,14 @@ module Rubix
       :template_remove   => 7,
       :host_enable       => 8,
       :host_disable      => 9
-    }.freeze
-    TYPE_NAMES = TYPE_CODES.invert.freeze
+    }
 
     # Numeric codes for the type of object that should be notified.
     # Default will be 'group'.
-    NOTIFICATION_OBJECT_CODES = {
+    zabbix_define :NOTIFICATION_OBJECT, {
       :user       => 0,
       :user_group => 1
-    }.freeze
-    NOTIFICATION_OBJECT_NAMES = NOTIFICATION_OBJECT_CODES.invert.freeze
+    }
 
     #
     # == Properties & Finding ==

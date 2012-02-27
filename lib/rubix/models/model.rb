@@ -438,6 +438,17 @@ module Rubix
         end
       end
     end
+
+    def self.zabbix_define defname, hash
+      codes = hash
+      names = hash.invert.freeze
+      codes.keys.each do |key|
+        codes[key.to_s] = codes[key]
+      end
+      codes.freeze
+      const_set "#{defname}_CODES", codes
+      const_set "#{defname}_NAMES", names
+    end
     
   end
 end

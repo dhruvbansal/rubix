@@ -4,44 +4,42 @@ module Rubix
 
     # Numeric codes for the operator to use to join conditions for
     # this action.  Default is 'and_or'.
-    JOIN_CODES = {
+    zabbix_define :JOIN, {
       :and_or => 0,
       :and    => 1,
       :or     => 2
-    }.freeze
-    JOIN_NAMES = JOIN_CODES.invert.freeze
+    }
     
     # Numeric codes for the event source.
-    TYPE_CODES = {
-	:host_group         => 0,
-	:host               => 1,
-	:trigger            => 2,
-	:trigger_name       => 3,
-	:trigger_severity   => 4,
-	:trigger_value      => 5,
-	:time_period        => 6,
-	:dhost_ip           => 7,
-	:dservice_type      => 8,
-	:dservice_port      => 9,
-	:dstatus            => 10,
-	:duptime            => 11,
-	:dvalue             => 12,
-	:host_template      => 13,
-	:event_acknowledged => 14,
-	:application        => 15,
-	:maintenance        => 16,
-	:node               => 17,
-	:drule              => 18,
-	:dcheck             => 19,
-	:proxy              => 20,
-	:dobject            => 21,
-	:host_name          => 22
-    }.freeze
-    TYPE_NAMES = TYPE_CODES.invert.freeze
+    zabbix_define :TYPE, {
+      :host_group         => 0,
+      :host               => 1,
+      :trigger            => 2,
+      :trigger_name       => 3,
+      :trigger_severity   => 4,
+      :trigger_value      => 5,
+      :time_period        => 6,
+      :dhost_ip           => 7,
+      :dservice_type      => 8,
+      :dservice_port      => 9,
+      :dstatus            => 10,
+      :duptime            => 11,
+      :dvalue             => 12,
+      :host_template      => 13,
+      :event_acknowledged => 14,
+      :application        => 15,
+      :maintenance        => 16,
+      :node               => 17,
+      :drule              => 18,
+      :dcheck             => 19,
+      :proxy              => 20,
+      :dobject            => 21,
+      :host_name          => 22
+    }
 
     # Numeric codes for the operator used to compare a condition's
     # type to its value.
-    OPERATOR_CODES = {
+    zabbix_define :OPERATOR, {
       :equal      => 0,
       :not_equal  => 1,
       :like       => 2,
@@ -49,9 +47,8 @@ module Rubix
       :in         => 4,
       :gte        => 5,
       :lte        => 6,
-      :not_in     => 7,
-    }.freeze
-    OPERATOR_NAMES = OPERATOR_CODES.invert.freeze
+      :not_in     => 7
+    }
 
     #
     # == Properties & Finding ==

@@ -14,7 +14,7 @@ module Rubix
     DEFAULT_PORT = 10050
 
     # The numeric codes for the various status types.
-    STATUS_CODES = {
+    zabbix_define :STATUS, {
       :monitored     => 0,
       :not_monitored => 1,
       :unreachable   => 2,
@@ -22,8 +22,7 @@ module Rubix
       :deleted       => 4,
       :proxy_active  => 5,
       :proxy_passive => 6
-    }.freeze
-    STATUS_NAMES = STATUS_CODES.invert.freeze
+    }
 
     zabbix_attr :name
     zabbix_attr :ip

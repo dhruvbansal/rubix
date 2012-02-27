@@ -5,12 +5,11 @@ module Rubix
   class User < Model
 
     # Numeric codes for the various user types.
-    TYPE_CODES = {
+    zabbix_define :TYPE, {
       :normal      => 1,
       :admin       => 2,
       :super_admin => 3
-    }.freeze
-    TYPE_NAMES = TYPE_CODES.invert.freeze
+    }
 
     #
     # == Properties & Finding ==
@@ -41,9 +40,14 @@ module Rubix
       self.media          = properties[:media]
     end
 
+    def resource_name
+      "#{self.class.resource_name} #{self.username || self.id}"
+    end
+    
     #
     # == Validations ==
     #
+    
     def validate
       super()
       raise ValidationError.new("A new user must have a password") if new_record? && (password.nil? || password.empty?)

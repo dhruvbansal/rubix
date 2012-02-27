@@ -9,7 +9,7 @@ module Rubix
     # The numeric codes for the various item types.
     #
     # Items without a type will be set to 'zabbix'.
-    TYPE_CODES = {
+    zabbix_define :TYPE, {
       :zabbix     => 0,
       :snmpv1     => 1,
       :trapper    => 2,
@@ -26,42 +26,38 @@ module Rubix
       :ssh        => 13,
       :telnet     => 14,
       :calculated => 15
-    }.freeze
-    TYPE_NAMES = TYPE_CODES.invert.freeze
+    }
 
     # The numeric codes for the value types of a Zabbix item.
     #
     # This Hash is used by ZabbixPipe#value_code_from_value to
     # dynamically set the type of a value when creating a new Zabbix
     # item.
-    VALUE_CODES = {
+    zabbix_define :VALUE, {
       :float        => 0,         # Numeric (float)
       :character    => 1,         # Character
       :log_line     => 2,         # Log
       :unsigned_int => 3,         # Numeric (unsigned)
       :text         => 4          # Text
-    }.freeze
-    VALUE_NAMES = VALUE_CODES.invert.freeze
+    }
 
     # The numeric codes for the data types of a Zabbix item.
     #
     # The default will be <tt>:decimal</tt>
-    DATA_CODES = {
+    zabbix_define :DATA, {
       :decimal     => 0,
       :octal       => 1,
       :hexadecimal => 2
-    }.freeze
-    DATA_NAMES = DATA_CODES.invert.freeze
+    }
 
     # The numeric codes for the status of a Zabbix item.
     #
     # The default will be <tt>:active</tt>
-    STATUS_CODES = {
+    zabbix_define :STATUS, {
       :active        => 0,
       :disabled      => 1,
       :not_supported => 3
-    }.freeze
-    STATUS_NAMES = STATUS_CODES.invert.freeze
+    }
 
     # Return the +value_type+ name (:float, :text, &c.) for a Zabbix
     # item's value type by examining the given +value+.
