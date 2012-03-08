@@ -36,7 +36,7 @@ describe "Hosts" do
   describe "when existing" do
     before do
       @host_group_2 = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_2'))
-      @host         = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1',         :host_groups => [@host_group_1]))
+      @host         = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1',         :host_groups => [@host_group_1], :ip => '123.123.123.123'))
       @template_1   = ensure_save(Rubix::Template.new(:name => 'rubix_spec_template_1', :host_groups => [@host_group_2]))
       @template_2   = ensure_save(Rubix::Template.new(:name => 'rubix_spec_template_2', :host_groups => [@host_group_2]))
     end
@@ -46,6 +46,12 @@ describe "Hosts" do
       hosts.should_not be_nil
       hosts.should_not be_empty
       hosts.first.name.should == @host.name
+    end
+
+    it "can be found using its IP" do
+      h = Rubix::Host.find(:ip => '123.123.123.123')
+      h.should_not be_nil
+      h.name.should == 'rubix_spec_host_1'
     end
 
     it "can have its name changed" do

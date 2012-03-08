@@ -157,7 +157,7 @@ module Rubix
     end
 
     def self.find_params options={}
-      get_params.merge(:filter => {:host => options[:name], id_field => options[:id]})
+      get_params.merge(:filter => {:host => options[:name], id_field => options[:id], :ip => options[:ip]})
     end
     
   end
