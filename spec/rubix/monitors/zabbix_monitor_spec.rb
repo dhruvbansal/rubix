@@ -11,7 +11,7 @@ describe Rubix::ZabbixMonitor do
   end
 
   it "will raise an error when no template name or host group is defined" do
-    lambda { @wrapper.new(@wrapper.default_settings) }.should raise_error(Rubix::Error)
+    lambda { @wrapper.new(@wrapper.default_settings).hosts }.should raise_error(Rubix::Error)
   end
 
   it "can find hosts based on a template" do

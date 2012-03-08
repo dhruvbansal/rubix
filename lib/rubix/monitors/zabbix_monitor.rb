@@ -33,8 +33,6 @@ module Rubix
   #   FooMonitor.run if $0 == __FILE__
   module ZabbixMonitor
 
-    attr_accessor :template, :host_group, :hosts
-
     def self.included klass
       klass.default_settings.tap do |s|
         s.define :zabbix_api_url, :description => "Zabbix API URL" ,         :required => true, :default => 'http://localhost/api_jsonrpc.php'
@@ -43,10 +41,8 @@ module Rubix
       end
     end
     
-    def initialize settings
-      super(settings)
+    def connect_to_zabbix
       Rubix.connect(settings[:zabbix_api_url], settings[:username], settings[:password])
-      find_hosts
     end
     
     def template_name
@@ -54,15 +50,16 @@ module Rubix
 
     def host_group_name
     end
-
-    def find_hosts
+    
+    def hosts
+      connect_to_zabbix
       case
       when template_name
-        self.template = Rubix::Template.find(:name => template_name)
-        self.hosts    = Rubix::Host.list(self.template.host_ids).find_all(&:monitored)
+        template = Rubix::Template.find(:name => template_name)
+        Rubix::Host.list(template.host_ids).find_all(&:monitored)
       when host_group_name
-        self.host_group = Rubix::HostGroup.find(:name => host_group_name)
-        self.hosts      = Rubix::Host.list(self.host_group.host_ids).find_all(&:monitored)
+        host_group = Rubix::HostGroup.find(:name => host_group_name)
+        Rubix::Host.list(host_group.host_ids).find_all(&:monitored)
       else
         raise Rubix::Error.new("Must define either a 'template_name' or a 'host_group_name' property for a Zabbix monitor.")
       end
