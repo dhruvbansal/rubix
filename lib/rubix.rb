@@ -47,6 +47,8 @@ module Rubix
   # @return [true, false]
   def self.connected?
     (!! connection)
+  rescue ConnectionError, AuthenticationError, RequestError
+    false
   end
 
   # Is Rubix presently connected and authorized with a Zabbix server?

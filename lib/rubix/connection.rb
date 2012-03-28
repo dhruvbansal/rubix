@@ -180,7 +180,7 @@ module Rubix
       @request_id += 1
       begin
         raw_response = server.request(raw_api_request(raw_params))
-      rescue NoMethodError, SocketError => e
+      rescue NoMethodError, Errno::ECONNREFUSED, SocketError => e
         raise RequestError.new("Could not connect to Zabbix server at #{host_with_port}")
       end
       raw_response
@@ -202,7 +202,7 @@ module Rubix
       # @request_id += 1
       begin
         raw_response = server.request(raw_web_request(verb, path, data))
-      rescue NoMethodError, SocketError => e
+      rescue NoMethodError, Errno::ECONNREFUSED, SocketError => e
         raise RequestError.new("Could not connect to the Zabbix server at #{host_with_port}")
       end
     end
