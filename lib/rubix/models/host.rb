@@ -120,6 +120,14 @@ module Rubix
         else 
           hp[:useipmi] = 0
         end
+        
+        hp[:ipmi_port] = ipmi_port if ipmi_port
+        hp[:ipmi_username] = ipmi_username if ipmi_username
+        hp[:ipmi_password] = ipmi_password if ipmi_password
+        hp[:ipmi_ip] = ipmi_ip if ipmi_ip
+        hp[:ipmi_authtype] = ipmi_authtype if ipmi_authtype
+        hp[:ipmi_privilege] = ipmi_privilege if ipmi_privilege
+        
       end
     end
     
