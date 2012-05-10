@@ -1,6 +1,7 @@
 require 'uri'
 require 'cgi'
 require 'net/http'
+require 'net/https'
 require 'json'
 
 require 'rubix/log'
@@ -127,6 +128,10 @@ module Rubix
         @uri = URI.parse(string)
       end
       @server = Net::HTTP.new(uri.host, uri.port)
+      if @uri.scheme == 'https' 
+        @server.use_ssl = true
+      end
+      return @server
     end
 
     protected

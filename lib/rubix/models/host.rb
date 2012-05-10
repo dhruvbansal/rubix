@@ -23,7 +23,27 @@ module Rubix
       :proxy_active  => 5,
       :proxy_passive => 6
     }
+    
+    # The numeric codes for IPMI authentication algorithms.
+    zabbix_define :IPMI_AUTH, {
+      :default => -1,
+      :none => 0,
+      :md2 => 1,
+      :md5 => 2,
+      :straight => 4,
+      :oem => 5, 
+      :rmcp_plus => 6 
+    }
 
+    # The numeric codes for IPMI priviledge levels.
+    zabbix_define :IPMI_PRIVILEGE, {
+      :callback => 1,
+      :user => 2,
+      :operator => 3,
+      :admin =>  4, 
+      :oem => 5
+    }
+    
     zabbix_attr :name
     zabbix_attr :ip
     zabbix_attr :port
@@ -32,6 +52,13 @@ module Rubix
     zabbix_attr :status
     zabbix_attr :use_ip,    :default => true
     zabbix_attr :monitored, :default => true
+    zabbix_attr :use_ipmi
+    zabbix_attr :ipmi_port, :default => 623
+    zabbix_attr :ipmi_username
+    zabbix_attr :ipmi_password
+    zabbix_attr :ipmi_ip
+    zabbix_attr :ipmi_authtype 
+    zabbix_attr :ipmi_privilege
     
     def initialize properties={}
       super(properties)
@@ -56,6 +83,11 @@ module Rubix
       @monitored = true
     end
     
+    def use_ipmi
+      return @use_ipmi if (!@use_ipmi.nil?)
+      @use_ipmi = true
+    end
+    
     #
     # == Associations == 
     #
@@ -70,6 +102,8 @@ module Rubix
 
     def validate
       raise ValidationError.new("A host must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
+      raise ValidationError.new("A host must have a ipmi_privilege defined as one of: " + self.class::IPMI_PRIVILEGE_CODES.keys.to_s) if use_ipmi && self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege].nil?
+      raise ValidationError.new("A host must have a ipmi_authtype defined as one of: " + self.class::IPMI_AUTH_CODES.keys.to_s) if use_ipmi && self.class::IPMI_AUTH_CODES[ipmi_authtype].nil?
       true
     end
     
@@ -85,6 +119,8 @@ module Rubix
         :macros    => user_macro_params
       }.tap do |hp|
         hp[:profile] = profile if profile
+        hp[:profile].delete("hostid") if hp[:profile] && hp[:profile]["hostid"]
+        
         hp[:status]  = (monitored ? 0 : 1) unless monitored.nil?
         
         case
@@ -100,6 +136,20 @@ module Rubix
           hp[:ip] = self.class::BLANK_IP
           hp[:useip] = 1
         end
+        
+        if use_ipmi == true
+          hp[:useipmi] = 1
+        else 
+          hp[:useipmi] = 0
+        end
+        
+        hp[:ipmi_port] = ipmi_port if ipmi_port
+        hp[:ipmi_username] = ipmi_username if ipmi_username
+        hp[:ipmi_password] = ipmi_password if ipmi_password
+        hp[:ipmi_ip] = ipmi_ip if ipmi_ip
+        hp[:ipmi_authtype] = self.class::IPMI_AUTH_CODES[ipmi_authtype] if ipmi_authtype
+        hp[:ipmi_privilege] = self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege] if ipmi_privilege
+        
       end
     end
     
@@ -132,6 +182,7 @@ module Rubix
     end
 
     def self.build host
+      host['profile'].delete('hostid') if host['profile']['hostid']
       new({
             :id             => host[id_field].to_i,
             :name           => host['host'],
@@ -142,13 +193,20 @@ module Rubix
             :port           => host['port'],
             :ip             => host['ip'],
             :dns            => host['dns'],
-            :use_ip         => (host['useip'].to_i  == '1'),
+            :use_ip         => (host['useip'].to_i  == 1),
 
             # If the status is '1' then this is an unmonitored host.
             # Otherwise it's either '0' for monitored and ok or
             # something else for monitored and *not* ok.
             :monitored      => (host['status'].to_i == 1 ? false : true),
-            :status         => self::STATUS_NAMES[host['status'].to_i]
+            :status         => self::STATUS_NAMES[host['status'].to_i],
+            :use_ipmi       => (host['useipmi'].to_i == 1),
+            :ipmi_port      => host['ipmi_port'].to_i,
+            :ipmi_username  => host['ipmi_username'],
+            :ipmi_password  => host['ipmi_password'],
+            :ipmi_ip        => host['ipmi_ip'],
+            :ipmi_authtype  => self::IPMI_AUTH_NAMES[host['ipmi_authtype'].to_i],
+            :ipmi_privilege => self::IPMI_PRIVILEGE_NAMES[host['ipmi_privilege'].to_i]
           })
     end
     
