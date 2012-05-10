@@ -97,6 +97,8 @@ module Rubix
         :macros    => user_macro_params
       }.tap do |hp|
         hp[:profile] = profile if profile
+        hp[:profile].delete("hostid") if hp[:profile]["hostid"]
+        
         hp[:status]  = (monitored ? 0 : 1) unless monitored.nil?
         
         case
@@ -150,6 +152,7 @@ module Rubix
     end
 
     def self.build host
+      host['profile'].delete('hostid') if host['profile']['hostid']
       new({
             :id             => host[id_field].to_i,
             :name           => host['host'],
