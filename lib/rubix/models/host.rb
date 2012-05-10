@@ -160,7 +160,7 @@ module Rubix
             :port           => host['port'],
             :ip             => host['ip'],
             :dns            => host['dns'],
-            :use_ip         => (host['useip'].to_i  == '1'),
+            :use_ip         => (host['useip'].to_i  == 1),
 
             # If the status is '1' then this is an unmonitored host.
             # Otherwise it's either '0' for monitored and ok or
