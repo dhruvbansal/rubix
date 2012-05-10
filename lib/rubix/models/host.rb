@@ -32,6 +32,13 @@ module Rubix
     zabbix_attr :status
     zabbix_attr :use_ip,    :default => true
     zabbix_attr :monitored, :default => true
+    zabbix_attr :use_ipmi
+    zabbix_attr :ipmi_port, :default => 623
+    zabbix_attr :ipmi_username
+    zabbix_attr :ipmi_password
+    zabbix_attr :ipmi_ip
+    zabbix_attr :ipmi_authtype 
+    zabbix_attr :ipmi_privilege
     
     def initialize properties={}
       super(properties)
@@ -54,6 +61,11 @@ module Rubix
     def monitored
       return @monitored if (!@monitored.nil?)
       @monitored = true
+    end
+    
+    def use_ipmi
+      return @use_ipmi if (!@use_ipmi.nil?)
+      @use_ipmi = true
     end
     
     #
@@ -99,6 +111,12 @@ module Rubix
         else
           hp[:ip] = self.class::BLANK_IP
           hp[:useip] = 1
+        end
+        
+        if use_ipmi == true
+          hp[:useipmi] = 1
+        else 
+          hp[:useipmi] = 0
         end
       end
     end
@@ -148,7 +166,14 @@ module Rubix
             # Otherwise it's either '0' for monitored and ok or
             # something else for monitored and *not* ok.
             :monitored      => (host['status'].to_i == 1 ? false : true),
-            :status         => self::STATUS_NAMES[host['status'].to_i]
+            :status         => self::STATUS_NAMES[host['status'].to_i],
+            :use_ipmi       => (host['useipmi'].to_i == 1),
+            :ipmi_port      => host['ipmi_port'].to_i,
+            :ipmi_username  => host['ipmi_username'],
+            :ipmi_password  => host['ipmi_password'],
+            :ipmi_ip        => host['ipmi_ip'],
+            :ipmi_authtype  => host['ipmi_authtype'].to_i,
+            :ipmi_privilege => host['ipmi_privilege'].to_i
           })
     end
     
