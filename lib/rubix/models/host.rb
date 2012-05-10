@@ -26,22 +26,22 @@ module Rubix
     
     # The numeric codes for IPMI authentication algorithms.
     zabbix_define :IPMI_AUTH, {
-      :default => -1,
-      :none => 0,
-      :md2 => 1,
-      :md5 => 2,
-      :straight => 4,
-      :oem => 5, 
+      :default   => -1,
+      :none      => 0,
+      :md2       => 1,
+      :md5       => 2,
+      :straight  => 4,
+      :oem       => 5, 
       :rmcp_plus => 6 
     }
 
     # The numeric codes for IPMI priviledge levels.
     zabbix_define :IPMI_PRIVILEGE, {
       :callback => 1,
-      :user => 2,
+      :user     => 2,
       :operator => 3,
-      :admin =>  4, 
-      :oem => 5
+      :admin    => 4, 
+      :oem      => 5
     }
     
     zabbix_attr :name
@@ -52,13 +52,13 @@ module Rubix
     zabbix_attr :status
     zabbix_attr :use_ip,    :default => true
     zabbix_attr :monitored, :default => true
-    zabbix_attr :use_ipmi
+    zabbix_attr :use_ipmi,  :default => false
     zabbix_attr :ipmi_port, :default => 623
     zabbix_attr :ipmi_username
     zabbix_attr :ipmi_password
     zabbix_attr :ipmi_ip
     zabbix_attr :ipmi_authtype 
-    zabbix_attr :ipmi_privilege
+    zabbix_attr :ipmi_privilege, :default => :user
     
     def initialize properties={}
       super(properties)
@@ -85,7 +85,7 @@ module Rubix
     
     def use_ipmi
       return @use_ipmi if (!@use_ipmi.nil?)
-      @use_ipmi = true
+      @use_ipmi = false
     end
     
     #
@@ -137,19 +137,13 @@ module Rubix
           hp[:useip] = 1
         end
         
-        if use_ipmi == true
-          hp[:useipmi] = 1
-        else 
-          hp[:useipmi] = 0
-        end
-        
-        hp[:ipmi_port] = ipmi_port if ipmi_port
-        hp[:ipmi_username] = ipmi_username if ipmi_username
-        hp[:ipmi_password] = ipmi_password if ipmi_password
-        hp[:ipmi_ip] = ipmi_ip if ipmi_ip
-        hp[:ipmi_authtype] = self.class::IPMI_AUTH_CODES[ipmi_authtype] if ipmi_authtype
+        hp[:useipmi]        = (use_ipmi == true ? 1 : 0)
+        hp[:ipmi_port]      = ipmi_port     if ipmi_port
+        hp[:ipmi_username]  = ipmi_username if ipmi_username
+        hp[:ipmi_password]  = ipmi_password if ipmi_password
+        hp[:ipmi_ip]        = ipmi_ip       if ipmi_ip
+        hp[:ipmi_authtype]  = self.class::IPMI_AUTH_CODES[ipmi_authtype]       if ipmi_authtype
         hp[:ipmi_privilege] = self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege] if ipmi_privilege
-        
       end
     end
     
@@ -182,7 +176,7 @@ module Rubix
     end
 
     def self.build host
-      host['profile'].delete('hostid') if host['profile']['hostid']
+      host['profile'].delete('hostid') if host.is_a?(Hash) && host['profile'].is_a?(Hash) && host['profile']['hostid']
       new({
             :id             => host[id_field].to_i,
             :name           => host['host'],
