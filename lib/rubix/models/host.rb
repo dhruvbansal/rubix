@@ -23,7 +23,27 @@ module Rubix
       :proxy_active  => 5,
       :proxy_passive => 6
     }
+    
+    # The numeric codes for IPMI authentication algorithms.
+    zabbix_define :IPMI_AUTH, {
+      :default => -1,
+      :none => 0,
+      :md2 => 1,
+      :md5 => 2,
+      :straight => 4,
+      :oem => 5, 
+      :rmcp_plus => 6 
+    }
 
+    # The numeric codes for IPMI priviledge levels.
+    zabbix_define :IPMI_PRIVILEGE, {
+      :callback => 1,
+      :user => 2,
+      :operator => 3,
+      :admin =>  4, 
+      :oem => 5
+    }
+    
     zabbix_attr :name
     zabbix_attr :ip
     zabbix_attr :port
@@ -82,6 +102,8 @@ module Rubix
 
     def validate
       raise ValidationError.new("A host must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
+      raise ValidationError.new("A host must have a ipmi_privilege defined as one of: " + self.class::IPMI_PRIVILEGE_CODES.keys.to_s) if use_ipmi && self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege].nil?
+      raise ValidationError.new("A host must have a ipmi_authtype defined as one of: " + self.class::IPMI_AUTH_CODES.keys.to_s) if use_ipmi && self.class::IPMI_AUTH_CODES[ipmi_authtype].nil?
       true
     end
     
@@ -125,8 +147,8 @@ module Rubix
         hp[:ipmi_username] = ipmi_username if ipmi_username
         hp[:ipmi_password] = ipmi_password if ipmi_password
         hp[:ipmi_ip] = ipmi_ip if ipmi_ip
-        hp[:ipmi_authtype] = ipmi_authtype if ipmi_authtype
-        hp[:ipmi_privilege] = ipmi_privilege if ipmi_privilege
+        hp[:ipmi_authtype] = self.class::IPMI_AUTH_CODES[ipmi_authtype] if ipmi_authtype
+        hp[:ipmi_privilege] = self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege] if ipmi_privilege
         
       end
     end
@@ -183,8 +205,8 @@ module Rubix
             :ipmi_username  => host['ipmi_username'],
             :ipmi_password  => host['ipmi_password'],
             :ipmi_ip        => host['ipmi_ip'],
-            :ipmi_authtype  => host['ipmi_authtype'].to_i,
-            :ipmi_privilege => host['ipmi_privilege'].to_i
+            :ipmi_authtype  => self::IPMI_AUTH_NAMES[host['ipmi_authtype'].to_i],
+            :ipmi_privilege => self::IPMI_PRIVILEGE_NAMES[host['ipmi_privilege'].to_i]
           })
     end
     
