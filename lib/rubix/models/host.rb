@@ -97,7 +97,7 @@ module Rubix
         :macros    => user_macro_params
       }.tap do |hp|
         hp[:profile] = profile if profile
-        hp[:profile].delete("hostid") if hp[:profile]["hostid"]
+        hp[:profile].delete("hostid") if hp[:profile] && hp[:profile]["hostid"]
         
         hp[:status]  = (monitored ? 0 : 1) unless monitored.nil?
         
