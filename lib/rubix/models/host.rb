@@ -102,6 +102,7 @@ module Rubix
 
     def validate
       raise ValidationError.new("A host must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
+      raise ValidationError.new("A host must have a valid ip address if use_ip is set.") if use_ip && ip == self.class::BLANK_IP
       raise ValidationError.new("A host must have a ipmi_privilege defined as one of: " + self.class::IPMI_PRIVILEGE_CODES.keys.to_s) if use_ipmi && self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege].nil?
       raise ValidationError.new("A host must have a ipmi_authtype defined as one of: " + self.class::IPMI_AUTH_CODES.keys.to_s) if use_ipmi && self.class::IPMI_AUTH_CODES[ipmi_authtype].nil?
       true
@@ -123,19 +124,17 @@ module Rubix
         
         hp[:status]  = (monitored ? 0 : 1) unless monitored.nil?
         
-        case
-        when use_ip == true && (!ip.nil?) && (!ip.empty?)
-          hp[:useip] = 1
-          hp[:ip]    = ip
-          hp[:port]  = port || self.class::DEFAULT_PORT
-        when (!dns.nil?) && (!dns.empty?)
-          hp[:useip] = 0
-          hp[:dns]   = dns
-          hp[:port]  = port || self.class::DEFAULT_PORT
-        else
-          hp[:ip] = self.class::BLANK_IP
-          hp[:useip] = 1
-        end
+        # Check to see if use_ip is set, otherwise we will use dns
+        hp[:useip]          = (use_ip == true ? 1 : 0)
+        
+        # if we have an IP then use it, otherwise use 0.0.0.0
+        hp[:ip]             = ip   || self.class::BLANK_IP
+        
+        # enter a dns record if we provide it no matter what
+        hp[:dns]            = dns           if dns
+        
+        # honor the provided port, otherwise use the default
+        hp[:port]           = port || self.class::DEFAULT_PORT
         
         hp[:useipmi]        = (use_ipmi == true ? 1 : 0)
         hp[:ipmi_port]      = ipmi_port     if ipmi_port
