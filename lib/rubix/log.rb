@@ -30,7 +30,7 @@ module Rubix
   #
   # Will attempt to read from
   #
-  # - <tt>Settings[:log_level]</tt> if <tt>Settings</tt> is defined (see Configliere[http://github.com/infochimps/configliere])
+  # - <tt>Settings[:log_level]</tt> if <tt>Settings</tt> is defined (see Configliere[https://github.com/infochimps-labs/configliere])
   # - the <tt>RUBIX_LOG_LEVEL</tt> environment variable if defined
   #
   # The default is 'info'.
@@ -57,7 +57,7 @@ module Rubix
   #
   # Will attempt to read from
   #
-  # - <tt>Settings[:log]</tt> if <tt>Settings</tt> is defined (see Configliere[http://github.com/infochimps/configliere])
+  # - <tt>Settings[:log]</tt> if <tt>Settings</tt> is defined (see Configliere[https://github.com/infochimps-labs/configliere])
   # - the <tt>RUBIX_LOG_PATH</tt> environment variable if defined
   #
   # Defaults to writing <tt>stdout</tt>.
