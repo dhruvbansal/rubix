@@ -162,6 +162,6 @@ module Rubix
     def data_path *args
       File.join(File.expand_path('../../data', __FILE__), *args)
     end
-    
+
   end
 end

@@ -5,8 +5,8 @@ describe "Items" do
   before do
     integration_test
     @host_group = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1'))
-    @host_1     = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group]))
-    @host_2     = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_2', :host_groups => [@host_group]))
+    @host_1     = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group], :ip => '123.123.123.123'))
+    @host_2     = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_2', :host_groups => [@host_group], :ip => '123.123.123.124'))
     @app_1      = ensure_save(Rubix::Application.new(:name => 'rubix_spec_app_1', :host_id => @host_1.id))
     @app_2      = ensure_save(Rubix::Application.new(:name => 'rubix_spec_app_1', :host_id => @host_2.id))
   end

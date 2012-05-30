@@ -10,7 +10,7 @@ module Rubix
     # server.
     BLANK_IP = '0.0.0.0'
 
-    # The default port.
+    # The default port on the Host at which Zabbix agent is listening.
     DEFAULT_PORT = 10050
 
     # The numeric codes for the various status types.
