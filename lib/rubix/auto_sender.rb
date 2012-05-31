@@ -2,27 +2,118 @@ require 'rubix/log'
 
 module Rubix
 
-  # A class used to send data to Zabbix.
+  # == Sender
   #
-  # This sender is used to implement the logic for the +zabbix_pipe+
-  # utility.  It is initialized with some metadata about a host, its
-  # host groups and templates, and applications into which items
-  # should be written, and it can then accept data and forward it to a
-  # Zabbix server using the +zabbix_sender+ utility that comes with
-  # Zabbix.
+  # Rubix comes with a +zabbix_pipe+ script which, coupled with the
+  # {+zabbix_sender+}[http://www.zabbix.com/documentation/1.8/manpages/zabbix_sender]
+  # utility, allows for writing data to Zabbix.
   #
-  # A sender can be given data in either TSV or JSON formats.  With
-  # the JSON format, it is possible to embed data for hosts, host
-  # groups, &c. distinct from that with which this sender was
-  # initialized.  This is a useful way to send many different kinds of
-  # data through the same process.
+  # By the design of Zabbix, all data written via +zabbix_sender+ (and
+  # therefore +zabbix_pipe+) must be written to items with type "Zabbix
+  # trapper".  This type instructs Zabbix to accept values written by
+  # +zabbix_sender+.
   #
-  # The sender will also auto-vivify any hosts, host gruops,
-  # templates, applications, and items it needs in order to be able to
-  # write data.  This is expensive in terms of time so it can be
-  # turned off using the <tt>--fast</tt> option.
+  # +zabbix_pipe+ can consume data from +STDIN+, a file on disk, or a
+  # {named pipe}[http://en.wikipedia.org/wiki/Named_pipe].  It consumes
+  # data one line at a time from any of these sources and uses the
+  # +zabbix_sender+ utility to send this data to a Zabbix server.
+  #
+  # Here's an example of starting +zabbix_pipe+ and sending some data onto
+  # Zabbix.  (Credentials and addresses for the Zabbix server and the
+  # Zabbix API can all be customized; see the <tt>--help</tt> option.)
+  #
+  #   # Send one data point -- this is tab separated!
+  #   $ echo "foo.bar.baz	123" | zabbix_pipe --host='My Zabbix Host' --host_groups='My Zabbix Servers,Some Other Group'
+  #   # Send a bunch of data points in a file
+  #   $ cat my_data.tsv | zabbix_pipe --host='My Zabbix Host' --host_groups='My Zabbix Servers,Some Other Group'
+  #
+  # You can also pass the file directly:
+  #
+  #   # Send a bunch of data points in a file
+  #   $ zabbix_pipe --host='My Zabbix Host' --host_groups='My Zabbix Servers,Some Other Group' my_data.tsv
+  #
+  # You can also listen from a named pipe.  This is useful on a
+  # "production" system in which many processes may want to simply and
+  # easily write somewhere without worrying about what happens.
+  #
+  #   # In the first terminal
+  #   $ mkfifo /dev/zabbix
+  #   $ zabbix_pipe --pipe=/dev/zabbix --host='My Zabbix Host' --host_groups='My Zabbix Servers,Some Other Group'
+  #
+  #   # In another terminal
+  #   $ echo "foo.bar.baz	123" > /dev/zabbix
+  #   $ cat my_data > /dev/zabbix
+  #
+  # In any of these modes, you can also send JSON data directly.
+  #
+  #   $ echo '{"data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
+  #
+  # This simple block of JSON doesn't really add any power to
+  # +zabbix_pipe+.  What becomes more interesting is that we can wedge in
+  # data for *diffferent* hosts, items, &c. when using JSON input:
+  #
+  #   $ echo '{"host": "My first host", "host_groups": "My Zabbix Servers,Some Other Group", "data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
+  #   $ echo '{"host": "My second host", "host_groups": "My Zabbix Servers,Some Other Group", "data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
+  #   $ echo '{"host": "My third host", "host_groups": "My Zabbix Servers,Some Other Group", "data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
+  #
+  # Rubix will switch hosts on the fly.
+  #
+  # === Auto-vivification
+  #
+  # By default, for every item written into +zabbix_pipe+, Rubix will
+  # first check, using the Zabbix API, whether an item with the given key
+  # exists for the given host.  If not, Rubix will create the host and
+  # the item.  You can pass a few details along with your data (when
+  # writing in JSON format) or at startup of the +zabbix_pipe+ to tune
+  # some of the properites of newly created hosts and items:
+  #
+  #   $ echo '{"host": "My host", "hostgroups": "Host Group 1,Host Group 2", "templates": "Template 1,Template 2", "applications": "App 1, App2", "data": [{"key": "foo.bar.baz", "value": 123}, {"key": "foo.bar.baz", "value": 101}]}' > /dev/zabbix
+  #
+  # If the host 'My host' does not exist, Rubix will create it, putting in
+  # each of the host groups 'Host Group 1' and 'Host Group 2' (which will
+  # also be auto-vivified), and attach it to templates 'Template 1' and
+  # 'Template 2' (auto-vivified).  If the item does not exist for the host
+  # 'My host', then it will be created and put inside applications 'App1'
+  # and 'App2' (auto-vivified).  The value type of the item (unsigned int,
+  # float, character, text, &c.) will be chosen dynamically based on the
+  # value being written. The created items will all be of the type "Zabbix
+  # trapper" so that they can be written to.
+  #
+  # Auto-vivification is intended to make it easy to register a lot of
+  # dynamic hosts and items in Zabbix.  This is perfect for cloud
+  # deployments where resources to be monitored are often dynamic.
+  #
+  # ==== Failed writes
+  #
+  # By the design of Zabbix, a newly created item of type 'Zabbix trapper'
+  # will not accept data for some interval, typically a minute or so,
+  # after being created.  This means that when writing a series of values
+  # for some non-existent item 'foo.bar.baz', the first write will cause
+  # the item to be created (auto-vivified), the next several writes will
+  # fail as the Zabbix server is not accepting writes for this item yet,
+  # and then all writes will begin to succeed as the Zabbix server catches
+  # up.  If it is absolutely essential for all writes to succeed,
+  # including the first, then +zabbix_pipe+ needs to go to sleep for a
+  # while after creating a new item in order to give the Zabbix server
+  # time to catch up.  This can be configured with the
+  # <tt>--create_item_sleep</tt> option.  By default this is set to 0.
+  #
+  # ==== Skipping auto-vivification
+  #
+  # Attempting to auto-vivify keys on every single write is expensive and
+  # does not scale.  It's recommended, therefore, to run +zabbix_pipe+
+  # with the <tt>--fast</tt> flag in production settings.  In this mode,
+  # +zabbix_pipe+ will not attempt to auto-vivify anything -- if items do
+  # not exist, writes will just fail, as they do with +zabbix_sender+
+  # itself.
+  #
+  # A good pattern is to set up a production pipe (in <tt>--fast</tt>)
+  # mode at <tt>/dev/zabbix</tt> and to do all development/deployment with
+  # a separate instance of +zabbix_pipe+.  Once development/deployment is
+  # complete and all hosts, groups, templates, applications, and items
+  # have been created, switch to writing all data in "production mode"
+  # using the <tt>--fast</tt> pipe at <tt>/dev/zabbix</tt>.
   class AutoSender
-
     include Logs
 
     # @return [Hash] settings
