@@ -221,6 +221,7 @@ module Rubix
       Rubix.logger.log(Logger::DEBUG, "SEND: #{json_body}") if Rubix.logger
       Net::HTTP::Post.new(uri.path).tap do |req|
         req['Content-Type'] = 'application/json-rpc'
+        req['User-Agent']   = "Rubix v. #{Rubix.version}"
         req.body            = json_body
       end
     end

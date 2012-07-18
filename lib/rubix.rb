@@ -69,6 +69,17 @@ module Rubix
     @connection
   end
 
+  # Return the current Rubix version.
+  #
+  # @return [String]
+  def self.version
+    @version ||= begin
+      File.read(File.expand_path('../../VERSION', __FILE__)).chomp
+    rescue => e
+      'unknown'
+    end    
+  end
+
   # Base class for Rubix errors.
   Error               = Class.new(RuntimeError)
 
