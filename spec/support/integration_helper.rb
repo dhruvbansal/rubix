@@ -79,7 +79,7 @@ module Rubix
         $RUBIX_MYSQL.query(%Q{INSERT INTO users_groups (usrgrpid, userid)                       SELECT users.userid, usrgrp.usrgrpid FROM users, usrgrp WHERE users.alias = '#{INTEGRATION_USER}' AND usrgrp.name = '#{INTEGRATION_GROUP}'})
         true
       rescue => e
-        puts "Could not create integraiton user or group: #{e.class} -- #{e.message}"
+        puts "Could not create integration user or group: #{e.class} -- #{e.message}"
         puts e.backtrace
         false
       end
