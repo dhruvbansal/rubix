@@ -67,7 +67,7 @@ module Rubix
         s.define :port,   :description => "Port of a Zabbix server",                             :required => false, :default => 10051, :type => Integer
         s.define :host,   :description => "Name of a Zabbix host",                               :required => false, :default => ENV["HOSTNAME"]
         s.define :config, :description => "Local Zabbix agentd configuration file",              :required => false, :default => "/etc/zabbix/zabbix_agentd.conf"
-        s.define :send,   :description => "Send data directlyt to Zabbix using 'zabbix_sender'", :required => false, :default => false, :type => :boolean
+        s.define :send,   :description => "Send data directly to Zabbix using 'zabbix_sender'",  :required => false, :default => false, :type => :boolean
       end
     end
 
