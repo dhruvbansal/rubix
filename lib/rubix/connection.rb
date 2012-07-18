@@ -159,6 +159,11 @@ module Rubix
     # restarting or something like that.  We keep trying until that
     # doesn't happen.
     #
+    # During long-running connections, the Zabbix server can reap the
+    # existing session if some time has passed since the last request
+    # from this Connection.  This method will also refresh the
+    # connection in that instance.
+    #
     # You shouldn't have to use this method directly -- the
     # <tt>Rubix::Connection#authorize!</tt> and
     # <tt>Rubix::Connection#request</tt> methods already use this
@@ -172,6 +177,9 @@ module Rubix
         till_response(attempt + 1, max_attempts, &block)
       when response.code.to_i >= 500
         raise ConnectionError.new("Too many consecutive failed requests (#{max_attempts}) to the Zabbix API at (#{uri}).")
+      when response.code.to_i == 200 && authorized? && response.body =~ /-32602/ && response.body =~ /Not authorized/
+        authorize!
+        till_response(attempt, max_attempts, &block)
       else
         @last_response = response
       end
