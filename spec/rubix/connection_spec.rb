@@ -41,6 +41,12 @@ describe Rubix::Connection do
       @connection.request_id.should == 3 # it's the number used for the *next* request
     end
 
+    it "should refresh its authorization credentials if they are deleted automatically" do
+      @mock_response.stub!(:body).and_return('{"jsonrpc":"2.0","error":{"code":-32602,"message":"Invalid params.","data":"Not authorized"},"id":4}')
+      @connection.should_receive(:authorize!)
+      @connection.request('foobar', {})
+    end
+
   end
 
   describe "sending web requests" do
