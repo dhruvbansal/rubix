@@ -1,4 +1,4 @@
-require 'yajl'
+require 'multi_json'
 
 module Rubix
 
@@ -37,8 +37,8 @@ module Rubix
         @parsed = {}
       else
         begin
-          @parsed = Yajl::Parser.new.parse(@body) if @code == 200
-        rescue JSON::ParserError => e
+          @parsed = MultiJson.load(@body) if @code == 200
+        rescue MultiJson::DecodeError => e
           @parsed = {}
         end
       end

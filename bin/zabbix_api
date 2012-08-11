@@ -31,16 +31,16 @@ end
 def perform_query
   begin
     method   = Settings.rest[0]
-    params   = Yajl::Parser.new.parse(Settings.rest[1])
+    params   = MultiJson.parse(Settings.rest[1])
     response = Rubix.connection.request(method, params)
 
     if Settings[:pretty]
-      puts JSON.pretty_generate(response.parsed)
+      puts MultiJson.dump(response.parsed, :pretty => true)
     else
       puts response.parsed.to_json
     end
     exit(0)
-  rescue JSON::ParserError => e
+  rescue MultiJson::DecodeError => e
     bail("Invalid JSON -- #{e.message}")
   rescue Rubix::Error => e
     bail($e.message)

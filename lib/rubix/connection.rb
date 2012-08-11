@@ -2,7 +2,7 @@ require 'uri'
 require 'cgi'
 require 'net/http'
 require 'net/https'
-require 'yajl'
+require 'multi_json'
 
 require 'rubix/log'
 
