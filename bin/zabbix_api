@@ -25,15 +25,15 @@ def bail msg=nil
 end
 
 def connect
-  Rubix.connect(Settings[:url], Settings[:username], Settings[:password])  
+  Rubix.connect(Settings[:url], Settings[:username], Settings[:password])
 end
 
 def perform_query
   begin
     method   = Settings.rest[0]
-    params   = JSON.parse(Settings.rest[1])
+    params   = Yajl::Parser.new.parse(Settings.rest[1])
     response = Rubix.connection.request(method, params)
-    
+
     if Settings[:pretty]
       puts JSON.pretty_generate(response.parsed)
     else
@@ -46,7 +46,7 @@ def perform_query
     bail($e.message)
   end
 end
-  
+
 def drop_into_a_shell
   require 'irb'
   ARGV.clear
