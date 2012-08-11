@@ -17,9 +17,11 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
 
   s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rake'
   s.add_development_dependency 'mysql2'
   
   s.add_dependency 'json',          '<= 1.6.1' # to match Chef
+  s.add_dependency 'chef'
   s.add_dependency 'configliere',   '>= 0.4.8'
   s.add_dependency 'multipart-post'
 end
