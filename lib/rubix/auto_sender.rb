@@ -407,7 +407,7 @@ module Rubix
     # @param [String] line a line of JSON data
     def process_line_of_json_in_new_pipe line
       begin
-        json = JSON.parse(line)
+        json = Yajl::Parser.new.parse(line)
       rescue JSON::ParserError => e
         error("Malformed JSON")
         return

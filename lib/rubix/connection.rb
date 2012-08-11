@@ -2,7 +2,7 @@ require 'uri'
 require 'cgi'
 require 'net/http'
 require 'net/https'
-require 'json'
+require 'yajl'
 
 require 'rubix/log'
 
@@ -41,7 +41,7 @@ module Rubix
 
     # @return [Rubix::Response] the last response from the Zabbix API -- useful for logging purposes
     attr_reader :last_response
-    
+
     # Set up a connection to a Zabbix API.
     #
     # The +uri_or_string+ can be either a string or a <tt>URI</tt>
@@ -100,7 +100,7 @@ module Rubix
         send_web_request(verb, path, data)
       end
     end
-    
+
     # Has this connection already been authorized and provided with a
     # authorization token from the Zabbix API?
     def authorized?
@@ -128,7 +128,7 @@ module Rubix
         @uri = URI.parse(string)
       end
       @server = Net::HTTP.new(uri.host, uri.port)
-      if @uri.scheme == 'https' 
+      if @uri.scheme == 'https'
         @server.use_ssl = true
       end
       return @server
@@ -219,7 +219,7 @@ module Rubix
         raise RequestError.new("Could not connect to the Zabbix server at #{host_with_port}")
       end
     end
-    
+
     # Generate the raw POST request to send to the Zabbix API
     #
     # @param [Hash, #to_json] raw_params the complete parameters of the request.
