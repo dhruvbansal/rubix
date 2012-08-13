@@ -1,40 +1,41 @@
-# version control
-.svn
-.hg
-.bzr
 
-# editors
-\#*
-.#*
-\.#*
-*~
-*.tmproj
-*._flymake.*
-*.project
 
-# os x
-.DS_Store
-Icon?
+
+
+
+
 
 # backup
-.bak
-
+# commonly ignored files
+# editors
+# os x
 # tools
-TAGS*
-nohop.out
-a.out
+# version control
+*._flymake.*
+*.gem
+*.project
 *.pyc
 *.so
 *.stackdump
+*.tmproj
+*~
+.#*
+.DS_Store
+.bak
+.bzr
+.hg
+.svn
 .yardoc
-
-# commonly ignored files
 /**/*DO_NOT_VERSION*
 /**/log/*
 /**/tmp/*
+/Gemfile.lock
 /doc/*
 /pkg/*
-
-*.gem
-
+Icon?
+TAGS*
+\#*
+\.#*
+a.out
+nohop.out
 spec/test.yml
