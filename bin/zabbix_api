@@ -31,13 +31,13 @@ end
 def perform_query
   begin
     method   = Settings.rest[0]
-    params   = MultiJson.parse(Settings.rest[1])
+    params   = MultiJson.load(Settings.rest[1])
     response = Rubix.connection.request(method, params)
 
     if Settings[:pretty]
       puts MultiJson.dump(response.parsed, :pretty => true)
     else
-      puts response.parsed.to_json
+      puts MultiJSON.dump(response.parsed)
     end
     exit(0)
   rescue MultiJson::DecodeError => e
