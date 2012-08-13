@@ -1,0 +1,10 @@
+--readme   README.rdoc
+--markup   rdoc
+--verbose
+-
+VERSION
+CHANGELOG.md
+LICENSE.md
+README.rdoc
+notes/*.md
+
