@@ -1,5 +1,7 @@
 = Rubix
 
+{<img src="https://secure.travis-ci.org/infochimps-labs/rubix.png?branch=master" alt="Build Status" />}[http://travis-ci.org/infochimps-labs/rubix]
+
 Rubix is a Ruby client for Zabbix[http://www.zabbix.com/] that makes
 it easier to programatically control Zabbix resources so that they can
 be coordinated in complex, dynamic, and distributed environments like
