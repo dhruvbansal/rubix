@@ -225,7 +225,7 @@ module Rubix
     # @param [Hash, #to_json] raw_params the complete parameters of the request.
     # @return [Net::HTTP::Post]
     def raw_api_request raw_params
-      json_body = raw_params.to_json
+      json_body = MultiJson.dump(raw_params)
       Rubix.logger.log(Logger::DEBUG, "SEND: #{json_body}") if Rubix.logger
       Net::HTTP::Post.new(uri.path).tap do |req|
         req['Content-Type'] = 'application/json-rpc'
