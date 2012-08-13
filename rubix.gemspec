@@ -18,11 +18,11 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rake'
   s.add_development_dependency 'rspec'
-  s.add_development_dependency 'mysql2'
+  # s.add_development_dependency 'mysql2'
+  s.add_development_dependency 'oj'    unless RUBY_PLATFORM =~ /java/
 
   s.add_dependency 'chef'
   s.add_dependency 'multi_json'
-  s.add_dependency 'oj'
-  s.add_dependency 'configliere',   '>= 0.4.8'
+  s.add_dependency 'configliere',   '>= 0.4.16'
   s.add_dependency 'multipart-post'
 end
