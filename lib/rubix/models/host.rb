@@ -175,6 +175,7 @@ module Rubix
 
     def self.build host
       host['profile'].delete('hostid') if host.is_a?(Hash) && host['profile'].is_a?(Hash) && host['profile']['hostid']
+      host.delete('profile')           if host.is_a?(Hash) && host['profile'].is_a?(Array)
       new({
             :id             => host[id_field].to_i,
             :name           => host['host'],
