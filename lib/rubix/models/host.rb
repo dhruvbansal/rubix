@@ -102,7 +102,7 @@ module Rubix
 
     def validate
       raise ValidationError.new("A host must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
-      raise ValidationError.new("A host must have a valid ip address if use_ip is set.") if use_ip && ip == self.class::BLANK_IP
+      # raise ValidationError.new("A host must have a valid ip address if use_ip is set.") if use_ip && ip == self.class::BLANK_IP
       raise ValidationError.new("A host must have an ip address if use_ip is set.") if use_ip && (ip.nil? || ip.empty?)
       raise ValidationError.new("A host must have a dns name if use_ip is false.") if !use_ip && dns.nil?
       raise ValidationError.new("A host must have a ipmi_privilege defined as one of: " + self.class::IPMI_PRIVILEGE_CODES.keys.to_s) if use_ipmi && self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege].nil?

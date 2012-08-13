@@ -32,6 +32,15 @@ describe "Hosts" do
       host.use_ip.should be_true
       host.ip.should == '123.123.123.123'
     end
+
+    it "can be created with a blank IP" do
+      host = Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group_1], :ip => '0.0.0.0')
+      host.save.should be_true
+      host.monitored.should be_true
+      host.use_ip.should be_true
+      host.ip.should == '0.0.0.0'
+    end
+    
   end
 
   describe "when existing" do
