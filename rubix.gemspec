@@ -3,7 +3,7 @@ root = File.expand_path('../', __FILE__)
 lib  = File.join(root, 'lib')
 $:.unshift lib unless $:.include?(lib)
 
-Gem::Specification.new do |s|
+Gem::Specification.new do |gem|
   gem.name         = 'rubix'
   gem.homepage     = 'http://github.com/dhruvbansal/rubix'
   gem.licenses     = ["Apache 2.0"]
