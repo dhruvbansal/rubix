@@ -8,7 +8,6 @@ describe "Items" do
     @host_1     = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group], :ip => '123.123.123.123'))
     @host_2     = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_2', :host_groups => [@host_group], :ip => '123.123.123.124'))
     @app_1      = ensure_save(Rubix::Application.new(:name => 'rubix_spec_app_1', :host_id => @host_1.id))
-    @app_2      = ensure_save(Rubix::Application.new(:name => 'rubix_spec_app_1', :host_id => @host_2.id))
   end
 
   after do
@@ -49,7 +48,6 @@ describe "Items" do
       @item.multiply_by  = 0.1
       @item.host_id      = @host_2.id
       @item.units        = 'MB'
-      @item.applications = [@app_2]
       @item.save.should be_true
 
       Rubix::Item.find(:key => 'rubix.spec1', :host_id => @host_1.id).should be_nil
@@ -66,7 +64,6 @@ describe "Items" do
       new_item.multiply_by.should == 0.1
       new_item.host.name.should  == @host_2.name
       new_item.units.should      == 'MB'
-      new_item.applications.map(&:name).should include(@app_2.name)
     end
 
     it "can be destroyed" do
