@@ -37,7 +37,7 @@ def perform_query
     if Settings[:pretty]
       puts MultiJson.dump(response.parsed, :pretty => true)
     else
-      puts MultiJSON.dump(response.parsed)
+      puts MultiJson.dump(response.parsed)
     end
     exit(0)
   rescue MultiJson::DecodeError => e
