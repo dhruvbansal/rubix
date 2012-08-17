@@ -24,6 +24,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'mysql2'
   gem.add_development_dependency 'oj'    unless RUBY_PLATFORM =~ /java/
 
+  gem.add_dependency 'chef'
   gem.add_dependency 'multi_json'
   gem.add_dependency 'configliere',   '>= 0.4.16'
   gem.add_dependency 'multipart-post'
