@@ -387,10 +387,12 @@ module Rubix
         if obj.save
           obj
         else
+          error("Error creating Zabbix #{resource_name} using #{options.inspect}: #{response.error_message}")
           false
         end
       else
-        error("Error creating Zabbix #{resource_name} using #{options.inspect}: #{response.error_message}")
+        # should probably never get here...
+        error("Error finding or creating Zabbix #{resource_name} using #{options.inspect}: #{response.error_message}")
         false
       end
     end
