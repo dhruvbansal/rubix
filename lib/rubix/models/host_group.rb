@@ -32,12 +32,8 @@ module Rubix
       {:name => name}
     end
 
-    def destroy_params
-      [{id_field => id}]
-    end
-
     def self.get_params
-      super().merge(:select_hosts => :refer)
+      super().merge(:selectHosts => :refer) # should we add selectTemplates?
     end
 
     def self.find_params options={}
@@ -48,7 +44,7 @@ module Rubix
       new({
             :id       => host_group[id_field].to_i,
             :name     => host_group['name'],
-            :host_ids => host_group['hosts'].map { |host_info| host_info['hostid'].to_i }
+            :host_ids => (host_group['hosts'] || []).map { |host_info| host_info['hostid'].to_i }
           })
     end
     

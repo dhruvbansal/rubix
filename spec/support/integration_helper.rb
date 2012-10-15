@@ -55,14 +55,15 @@ module Rubix
         false
       end
     end
-
-    # These are the tables we'll truncate in the database.
-    RUBIX_TABLES_TO_TRUNCATE = %w[actions conditions operations opconditions opmediatypes applications groups hostmacro hosts hosts_groups hosts_profiles hosts_profiles_ext hosts_templates items items_applications profiles triggers trigger_depends history sessions media_type scripts users usrgrp users_groups]
-
+    
     def self.truncate_all_tables
       return unless $RUBIX_MYSQL
       begin
-        RUBIX_TABLES_TO_TRUNCATE.each { |table| $RUBIX_MYSQL.query("TRUNCATE TABLE #{table}") }
+        %w[actions graphs triggers items applications hosts].each do |table|
+          $RUBIX_MYSQL.query("DELETE FROM #{table}")
+        end
+        $RUBIX_MYSQL.query('DELETE FROM groups WHERE `internal` != 1')
+        $RUBIX_MYSQL.query('DELETE FROM users  WHERE `alias`    != "Admin" AND `alias` != "guest"')
         true
       rescue => e
         puts "Could not truncate tables in MySQL: #{e.class} -- #{e.message}"
@@ -75,7 +76,7 @@ module Rubix
       return unless $RUBIX_MYSQL
       begin
         $RUBIX_MYSQL.query(%Q{INSERT INTO users        (`alias`, `name`, surname, passwd, type) VALUES ("#{INTEGRATION_USER}", "Rubix", "Spec User", "#{Digest::MD5.hexdigest('rubix')}", 3)})
-        $RUBIX_MYSQL.query(%Q{INSERT INTO usrgrp       (`name`, api_access)                     VALUES ("#{INTEGRATION_GROUP}", 1)})
+        # $RUBIX_MYSQL.query(%Q{INSERT INTO usrgrp       (`name`, api_access)                     VALUES ("#{INTEGRATION_GROUP}", 1)})
         $RUBIX_MYSQL.query(%Q{INSERT INTO users_groups (usrgrpid, userid)                       SELECT users.userid, usrgrp.usrgrpid FROM users, usrgrp WHERE users.alias = '#{INTEGRATION_USER}' AND usrgrp.name = '#{INTEGRATION_GROUP}'})
         true
       rescue => e
