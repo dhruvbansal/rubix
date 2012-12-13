@@ -71,7 +71,7 @@ module Rubix
     def initialize properties={}
       @properties = properties
       self.class.properties.keys.each do |property|
-        self.send("#{property}=", properties[property])
+        self.send("#{property}=", (properties[property] || properties[property.to_sym]))
       end
       @id         = properties[:id]
     end

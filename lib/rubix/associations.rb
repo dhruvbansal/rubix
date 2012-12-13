@@ -10,6 +10,8 @@ module Rubix
     autoload :HasManyUsers,         'rubix/associations/has_many_users'
     autoload :HasManyUserGroups,    'rubix/associations/has_many_user_groups'
     autoload :HasManyConditions,    'rubix/associations/has_many_conditions'
+    autoload :HasManyInterfaces,    'rubix/associations/has_many_interfaces'
+    autoload :HasInventory,         'rubix/associations/has_inventory'
     
     autoload :BelongsToHost,        'rubix/associations/belongs_to_host'
     autoload :BelongsToTemplate,    'rubix/associations/belongs_to_template'

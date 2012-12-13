@@ -6,13 +6,6 @@ module Rubix
     # == Properties & Finding ==
     #
     
-    # The IP for a Host that not supposed to be polled by the Zabbix
-    # server.
-    BLANK_IP = '0.0.0.0'
-
-    # The default port on the Host at which Zabbix agent is listening.
-    DEFAULT_PORT = 10050
-
     # The numeric codes for the various status types.
     zabbix_define :STATUS, {
       :monitored     => 0,
@@ -22,6 +15,13 @@ module Rubix
       :deleted       => 4,
       :proxy_active  => 5,
       :proxy_passive => 6
+    }
+
+    # The numeric codes for the various availability types.
+    zabbix_define :AVAILABILITY, {
+      :unknown      => 0,
+      :available    => 1,
+      :unavailable  => 2
     }
     
     # The numeric codes for IPMI authentication algorithms.
@@ -45,20 +45,34 @@ module Rubix
     }
     
     zabbix_attr :name
-    zabbix_attr :ip
-    zabbix_attr :port
-    zabbix_attr :profile
-    zabbix_attr :dns
-    zabbix_attr :status
-    zabbix_attr :use_ip,    :default => true
-    zabbix_attr :monitored, :default => true
-    zabbix_attr :use_ipmi,  :default => false
-    zabbix_attr :ipmi_port, :default => 623
+    zabbix_attr :visible_name
+    zabbix_attr :status, :default => :monitored
+
+    # IPMI
     zabbix_attr :ipmi_username
     zabbix_attr :ipmi_password
-    zabbix_attr :ipmi_ip
     zabbix_attr :ipmi_authtype 
     zabbix_attr :ipmi_privilege, :default => :user
+
+    # Read-only.  Will be read on 'build' but not transmitted on
+    # 'create' or 'update'.
+    zabbix_attr :availability
+    zabbix_attr :disable_until
+    zabbix_attr :error_msg
+    zabbix_attr :errors_from
+    zabbix_attr :ipmi_availability
+    zabbix_attr :ipmi_disable_until
+    zabbix_attr :ipmi_error
+    zabbix_attr :ipmi_errors_from
+    zabbix_attr :jmx_availability
+    zabbix_attr :jmx_disable_until
+    zabbix_attr :jmx_error
+    zabbix_attr :jmx_errors_from
+    zabbix_attr :snmp_availability
+    zabbix_attr :snmp_disable_until
+    zabbix_attr :snmp_error
+    zabbix_attr :snmp_errors_from
+    zabbix_attr :last_access
     
     def initialize properties={}
       super(properties)
@@ -69,25 +83,15 @@ module Rubix
       self.template_ids   = properties[:template_ids]
       self.templates      = properties[:templates]
 
+      self.interface_ids   = properties[:interface_ids]
+      self.interfaces      = properties[:interfaces]
+      
       self.user_macro_ids = properties[:user_macro_ids]
       self.user_macros    = properties[:user_macros]
+      
+      self.inventory      = properties[:inventory]
     end
 
-    def use_ip
-      return @use_ip if (!@use_ip.nil?)
-      @use_ip = true
-    end
-
-    def monitored
-      return @monitored if (!@monitored.nil?)
-      @monitored = true
-    end
-    
-    def use_ipmi
-      return @use_ipmi if (!@use_ipmi.nil?)
-      @use_ipmi = false
-    end
-    
     #
     # == Associations == 
     #
@@ -95,6 +99,8 @@ module Rubix
     include Associations::HasManyHostGroups
     include Associations::HasManyTemplates
     include Associations::HasManyUserMacros
+    include Associations::HasManyInterfaces
+    include Associations::HasInventory
 
     #
     # == Validation == 
@@ -102,11 +108,7 @@ module Rubix
 
     def validate
       raise ValidationError.new("A host must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
-      # raise ValidationError.new("A host must have a valid ip address if use_ip is set.") if use_ip && ip == self.class::BLANK_IP
-      raise ValidationError.new("A host must have an ip address if use_ip is set.") if use_ip && (ip.nil? || ip.empty?)
-      raise ValidationError.new("A host must have a dns name if use_ip is false.") if !use_ip && dns.nil?
-      raise ValidationError.new("A host must have a ipmi_privilege defined as one of: " + self.class::IPMI_PRIVILEGE_CODES.keys.to_s) if use_ipmi && self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege].nil?
-      raise ValidationError.new("A host must have a ipmi_authtype defined as one of: " + self.class::IPMI_AUTH_CODES.keys.to_s) if use_ipmi && self.class::IPMI_AUTH_CODES[ipmi_authtype].nil?
+      raise ValidationError.new("A host must have at least one interface.")  if interface_ids.nil?  || interfaces.empty?
       true
     end
     
@@ -116,95 +118,92 @@ module Rubix
 
     def create_params
       {
-        :host      => name,
-        :groups    => host_group_params,
-        :templates => template_params,
-        :macros    => user_macro_params
+        :host       => name,
+        :name       => visible_name,
+        :status     => self.class::STATUS_CODES[status],
+        :groups     => host_group_params,
+        :templates  => template_params,
+        :macros     => user_macro_params,
+        :interfaces => interface_params
       }.tap do |hp|
-        hp[:profile] = profile if profile
-        hp[:profile].delete("hostid") if hp[:profile] && hp[:profile]["hostid"]
-        hp[:status]  = (monitored ? 0 : 1) unless monitored.nil?
-        
-        # Check to see if use_ip is set, otherwise we will use dns
-        hp[:useip]          = (use_ip == true ? 1 : 0)
-        
-        # if we have an IP then use it, otherwise use 0.0.0.0, same goes for the port
-        hp[:ip]             = ip   || self.class::BLANK_IP
-        hp[:port]           = port || self.class::DEFAULT_PORT
-        
-        # Always allow for a DNS record to exist even if we dont use it to monitor.
-        hp[:dns]            = dns           if dns
-        
-        hp[:useipmi]        = (use_ipmi == true ? 1 : 0)
-        hp[:ipmi_port]      = ipmi_port     if ipmi_port
         hp[:ipmi_username]  = ipmi_username if ipmi_username
         hp[:ipmi_password]  = ipmi_password if ipmi_password
-        hp[:ipmi_ip]        = ipmi_ip       if ipmi_ip
         hp[:ipmi_authtype]  = self.class::IPMI_AUTH_CODES[ipmi_authtype]       if ipmi_authtype
         hp[:ipmi_privilege] = self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege] if ipmi_privilege
+        hp[:inventory]      = inventory_params if inventory
       end
     end
     
-    def update_params
-      create_params.tap do |cp|
-        cp.delete(:groups)
-        cp.delete(:templates)
-        cp.delete(:macros)
-        cp[id_field] = id
-      end
-    end
+    # def update_params
+    #   create_params.tap do |cp|
+    #     cp.delete(:groups)
+    #     cp.delete(:templates)
+    #     cp.delete(:macros)
+    #     cp.delete(:interfaces)
+    #     cp[id_field] = id
+    #   end
+    # end
 
-    def before_update
-      response = request('host.massUpdate', { :groups => host_group_params, :templates => template_params, :macros => user_macro_params, :hosts => [{id_field => id}]})
-      if response.has_data?
-        true
-      else
-        error("Could not update all templates, host groups, and/or macros for #{resource_name}: #{response.error_message}")
-        false
-      end
-    end
+    # def before_update
+    #   response = request('host.massUpdate', { :interfaces => interface_params, :groups => host_group_params, :templates => template_params, :macros => user_macro_params, :hosts => [{id_field => id}]})
+    #   if response.has_data?
+    #     true
+    #   else
+    #     error("Could not update all interfaces, templates, host groups, and/or macros for #{resource_name}: #{response.error_message}")
+    #     false
+    #   end
+    # end
     
     def destroy_params
       [{id_field => id}]
     end
 
-    def before_destroy
-      return true if user_macros.nil? || user_macros.empty?
-      user_macros.map { |um| um.destroy }.all?
-    end
+    # def before_destroy
+    #   return true if user_macros.nil? || user_macros.empty?
+    #   user_macros.map { |um| um.destroy }.all?
+    # end
 
     def self.build host
-      host['profile'].delete('hostid') if host.is_a?(Hash) && host['profile'].is_a?(Hash) && host['profile']['hostid']
-      host.delete('profile')           if host.is_a?(Hash) && host['profile'].is_a?(Array)
       new({
             :id             => host[id_field].to_i,
             :name           => host['host'],
+            :visible_name   => host['name'],
+            
             :host_group_ids => host['groups'].map { |group| group['groupid'].to_i },
             :template_ids   => host['parentTemplates'].map { |template| (template['templateid'] || template[id_field]).to_i },
             :user_macros    => host['macros'].map { |um| UserMacro.new(:host_id => um[id_field].to_i, :id => um['hostmacroid'], :value => um['value'], :macro => um['macro']) },
-            :profile        => host['profile'],
-            :port           => host['port'],
-            :ip             => host['ip'],
-            :dns            => host['dns'],
-            :use_ip         => (host['useip'].to_i  == 1),
-
-            # If the status is '1' then this is an unmonitored host.
-            # Otherwise it's either '0' for monitored and ok or
-            # something else for monitored and *not* ok.
-            :monitored      => (host['status'].to_i == 1 ? false : true),
+            :interfaces     => host['interfaces'].values,
+            
             :status         => self::STATUS_NAMES[host['status'].to_i],
-            :use_ipmi       => (host['useipmi'].to_i == 1),
-            :ipmi_port      => host['ipmi_port'].to_i,
+            
             :ipmi_username  => host['ipmi_username'],
             :ipmi_password  => host['ipmi_password'],
-            :ipmi_ip        => host['ipmi_ip'],
             :ipmi_authtype  => self::IPMI_AUTH_NAMES[host['ipmi_authtype'].to_i],
-            :ipmi_privilege => self::IPMI_PRIVILEGE_NAMES[host['ipmi_privilege'].to_i]
+            :ipmi_privilege => self::IPMI_PRIVILEGE_NAMES[host['ipmi_privilege'].to_i],
+
+
+            :availability       => self::AVAILABILITY_NAMES[host['availability'].to_i],
+            :disable_until      => host['disable_until'].to_i,
+            :error_msg          => host['error'],
+            :errors_from        => host['errors_from'].to_i,
+            :ipmi_availability  => self::AVAILABILITY_NAMES[host['ipmi_availability'].to_i],
+            :ipmi_disable_until => host['ipmi_disable_until'].to_i,
+            :ipmi_error         => host['ipmi_error'],
+            :ipmi_errors_from   => host['ipmi_errors_from'].to_i,
+            :jmx_availability   => self::AVAILABILITY_NAMES[host['jmx_availability'].to_i],
+            :jmx_disable_until  => host['jmx_disable_until'].to_i,
+            :jmx_error          => host['jmx_error'],
+            :jmx_errors_from    => host['jmx_errors_from'].to_i,
+            :snmp_availability  => self::AVAILABILITY_NAMES[host['snmp_availability'].to_i],
+            :snmp_disable_until => host['snmp_disable_until'].to_i,
+            :snmp_error         => host['snmp_error'],
+            :snmp_errors_from   => host['snmp_errors_from'].to_i,
+            :last_access        => host['last_access'].to_i
           })
     end
     
     def self.get_params
-      super().merge({:select_groups => :refer, :selectParentTemplates => :refer, :select_profile => :refer, :select_macros => :extend})
+      super().merge({:selectGroups => :refer, :selectParentTemplates => :refer, :selectInterfaces => :extend, :selectMacros => :extend})
     end
 
     def self.find_params options={}
