@@ -134,6 +134,10 @@ module Rubix
       return @server
     end
 
+    def api_version
+      @api_version ||= request('apiinfo.version', {}).parsed["result"]
+    end
+
     protected
 
     # The parameters used for constructing an authorization request
