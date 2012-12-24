@@ -135,7 +135,7 @@ module Rubix
     end
 
     def api_version
-      @api_version ||= request('apiinfo.version', {}).parsed["result"]
+      @api_version ||= request('apiinfo.version', {}).result
     end
 
     protected

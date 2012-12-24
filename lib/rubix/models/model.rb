@@ -87,13 +87,13 @@ module Rubix
     end
 
     # Return Zabbix API version
-    # @return [Rubix::Response]
+    # @return [String]
     def api_version
       self.class.api_version
     end
 
     # Return Zabbix API version
-    # @return [Rubix::Response]
+    # @return [String]
     def self.api_version
       Rubix.connection && Rubix.connection.api_version
     end
