@@ -204,7 +204,12 @@ module Rubix
     end
     
     def self.get_params
-      super().merge({:select_groups => :refer, :selectParentTemplates => :refer, :select_profile => :refer, :select_macros => :extend})
+      case api_version
+        when '1.4'
+          super().merge({:selectGroups => :refer, :selectParentTemplates => :refer, :select_profile => :refer, :selectMacros => :extend})
+        else
+          super().merge({:select_groups => :refer, :selectParentTemplates => :refer, :select_profile => :refer, :select_macros => :extend})
+      end
     end
 
     def self.find_params options={}

@@ -86,6 +86,18 @@ module Rubix
       self.class.request(method, params)
     end
 
+    # Return Zabbix API version
+    # @return [String]
+    def api_version
+      self.class.api_version
+    end
+
+    # Return Zabbix API version
+    # @return [String]
+    def self.api_version
+      Rubix.connection && Rubix.connection.api_version
+    end
+
     # Send a request to the Zabbix API.  This is just a convenience
     # method for <tt>Rubix::Connection#request</tt>.
     #
