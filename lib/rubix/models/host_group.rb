@@ -1,5 +1,5 @@
 module Rubix
-  
+
   class HostGroup < Model
 
     #
@@ -11,17 +11,17 @@ module Rubix
       self.host_ids = properties[:host_ids]
       self.hosts    = properties[:hosts]
     end
-    
+
     zabbix_attr :name, :required => true
-    
+
     def self.id_field
       'groupid'
     end
-    
+
     #
     # == Associations ==
     #
-    
+
     include Associations::HasManyHosts
 
     #
@@ -33,7 +33,7 @@ module Rubix
     end
 
     def destroy_params
-      [{id_field => id}]
+      [id]
     end
 
     def self.get_params
@@ -51,6 +51,5 @@ module Rubix
             :host_ids => host_group['hosts'].map { |host_info| host_info['hostid'].to_i }
           })
     end
-    
   end
 end

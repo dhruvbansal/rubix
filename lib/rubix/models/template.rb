@@ -48,7 +48,7 @@ module Rubix
     end
 
     def destroy_params
-      [{id_field => id}]
+      [id]
     end
 
     def self.get_params
@@ -109,6 +109,5 @@ module Rubix
         end
       end
     end
-    
   end
 end
