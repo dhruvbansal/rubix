@@ -1,11 +1,24 @@
 module Rubix
 
   class Host < Model
+    class Interface < Model
+      zabbix_attr :type,   :default => 1
+      zabbix_attr :main,   :default => 1
+      zabbix_attr :use_ip, :default => true
+      zabbix_attr :ip
+      zabbix_attr :dns,    :default => ''
+      zabbix_attr :port
+
+      def use_ip
+        return @use_ip if (!@use_ip.nil?)
+        @use_ip = true
+      end
+    end
 
     #
     # == Properties & Finding ==
     #
-    
+
     # The IP for a Host that not supposed to be polled by the Zabbix
     # server.
     BLANK_IP = '0.0.0.0'
@@ -45,12 +58,9 @@ module Rubix
     }
     
     zabbix_attr :name
-    zabbix_attr :ip
-    zabbix_attr :port
+    zabbix_attr :interfaces, :default => []
     zabbix_attr :profile
-    zabbix_attr :dns
     zabbix_attr :status
-    zabbix_attr :use_ip,    :default => true
     zabbix_attr :monitored, :default => true
     zabbix_attr :use_ipmi,  :default => false
     zabbix_attr :ipmi_port, :default => 623
@@ -71,11 +81,7 @@ module Rubix
 
       self.user_macro_ids = properties[:user_macro_ids]
       self.user_macros    = properties[:user_macros]
-    end
-
-    def use_ip
-      return @use_ip if (!@use_ip.nil?)
-      @use_ip = true
+      self.interfaces     = properties[:interfaces].map { |i| Interface.new i }
     end
 
     def monitored
@@ -103,8 +109,12 @@ module Rubix
     def validate
       raise ValidationError.new("A host must have at least one host group.") if host_group_ids.nil? || host_group_ids.empty?
       # raise ValidationError.new("A host must have a valid ip address if use_ip is set.") if use_ip && ip == self.class::BLANK_IP
-      raise ValidationError.new("A host must have an ip address if use_ip is set.") if use_ip && (ip.nil? || ip.empty?)
-      raise ValidationError.new("A host must have a dns name if use_ip is false.") if !use_ip && dns.nil?
+      raise ValidationError.new("A host must have at least one interface") if interfaces.empty?
+
+      interfaces.each do |i|
+        raise ValidationError.new("A host must have an ip address if use_ip is set.") if i.use_ip && (i.ip.nil? || i.ip.empty?)
+        raise ValidationError.new("A host must have a dns name if use_ip is false.") if !i.use_ip && i.dns.nil?
+      end
       raise ValidationError.new("A host must have a ipmi_privilege defined as one of: " + self.class::IPMI_PRIVILEGE_CODES.keys.to_s) if use_ipmi && self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege].nil?
       raise ValidationError.new("A host must have a ipmi_authtype defined as one of: " + self.class::IPMI_AUTH_CODES.keys.to_s) if use_ipmi && self.class::IPMI_AUTH_CODES[ipmi_authtype].nil?
       true
@@ -124,17 +134,24 @@ module Rubix
         hp[:profile] = profile if profile
         hp[:profile].delete("hostid") if hp[:profile] && hp[:profile]["hostid"]
         hp[:status]  = (monitored ? 0 : 1) unless monitored.nil?
-        
+
         # Check to see if use_ip is set, otherwise we will use dns
-        hp[:useip]          = (use_ip == true ? 1 : 0)
-        
-        # if we have an IP then use it, otherwise use 0.0.0.0, same goes for the port
-        hp[:ip]             = ip   || self.class::BLANK_IP
-        hp[:port]           = port || self.class::DEFAULT_PORT
-        
-        # Always allow for a DNS record to exist even if we dont use it to monitor.
-        hp[:dns]            = dns           if dns
-        
+        hp[:interfaces] = []
+        interfaces.each do |i|
+          res = {}
+          res[:useip]          = (i.use_ip == true ? 1 : 0)
+
+          # if we have an IP then use it, otherwise use 0.0.0.0, same goes for the port
+          res[:ip]             = i.ip   || self.class::BLANK_IP
+          res[:port]           = i.port || self.class::DEFAULT_PORT
+
+          # Always allow for a DNS record to exist even if we dont use it to monitor.
+          res[:dns]            = i.dns           if i.dns
+          res[:main]           = i.main
+          res[:type]           = i.type
+          hp[:interfaces] << res
+        end
+
         hp[:useipmi]        = (use_ipmi == true ? 1 : 0)
         hp[:ipmi_port]      = ipmi_port     if ipmi_port
         hp[:ipmi_username]  = ipmi_username if ipmi_username
@@ -144,7 +161,7 @@ module Rubix
         hp[:ipmi_privilege] = self.class::IPMI_PRIVILEGE_CODES[ipmi_privilege] if ipmi_privilege
       end
     end
-    
+
     def update_params
       create_params.tap do |cp|
         cp.delete(:groups)
@@ -183,10 +200,11 @@ module Rubix
             :template_ids   => host['parentTemplates'].map { |template| (template['templateid'] || template[id_field]).to_i },
             :user_macros    => host['macros'].map { |um| UserMacro.new(:host_id => um[id_field].to_i, :id => um['hostmacroid'], :value => um['value'], :macro => um['macro']) },
             :profile        => host['profile'],
-            :port           => host['port'],
-            :ip             => host['ip'],
-            :dns            => host['dns'],
-            :use_ip         => (host['useip'].to_i  == 1),
+            :interfaces     => host['interfaces'].map { |k, i|
+              {:port           => i['port'],
+              :ip             => i['ip'],
+              :dns            => i['dns'],
+              :use_ip         => (i['useip'].to_i  == 1)}},
 
             # If the status is '1' then this is an unmonitored host.
             # Otherwise it's either '0' for monitored and ok or
@@ -204,12 +222,8 @@ module Rubix
     end
     
     def self.get_params
-      case api_version
-        when '1.4'
-          super().merge({:selectGroups => :refer, :selectParentTemplates => :refer, :select_profile => :refer, :selectMacros => :extend})
-        else
-          super().merge({:select_groups => :refer, :selectParentTemplates => :refer, :select_profile => :refer, :select_macros => :extend})
-      end
+      super().merge({:selectGroups => :refer, :selectParentTemplates => :refer, :select_profile => :refer, :selectMacros => :extend,
+                     :selectInterfaces => :extend})
     end
 
     def self.find_params options={}

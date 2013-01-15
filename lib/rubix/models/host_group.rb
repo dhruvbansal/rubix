@@ -37,12 +37,7 @@ module Rubix
     end
 
     def self.get_params
-      case api_version
-        when '1.4'
-          super().merge(:selectHosts => :refer)
-        else
-          super().merge(:select_hosts => :refer)
-      end
+      super().merge(:selectHosts => :refer)
     end
 
     def self.find_params options={}

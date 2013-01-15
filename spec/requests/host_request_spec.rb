@@ -24,21 +24,21 @@ describe "Hosts" do
     it "returns an empty array when listing with IDs" do
       Rubix::Host.list([1,2,3]).should == []
     end
-    
+
     it "can be created" do
-      host = Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group_1], :ip => '123.123.123.123')
+      host = Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group_1], :interfaces => [:ip => '123.123.123.123'])
       host.save.should be_true
       host.monitored.should be_true
-      host.use_ip.should be_true
-      host.ip.should == '123.123.123.123'
+      host.interfaces.first.use_ip.should be_true
+      host.interfaces.first.ip.should == '123.123.123.123'
     end
 
     it "can be created with a blank IP" do
-      host = Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group_1], :ip => '0.0.0.0')
+      host = Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group_1], :interfaces => [:ip => '0.0.0.0'])
       host.save.should be_true
       host.monitored.should be_true
-      host.use_ip.should be_true
-      host.ip.should == '0.0.0.0'
+      host.interfaces.first.use_ip.should be_true
+      host.interfaces.first.ip.should == '0.0.0.0'
     end
     
   end
@@ -46,7 +46,8 @@ describe "Hosts" do
   describe "when existing" do
     before do
       @host_group_2 = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_2'))
-      @host         = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1',         :host_groups => [@host_group_1], :ip => '123.123.123.123'))
+      @host         = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1',         :host_groups => [@host_group_1],
+                                                  :interfaces => [{:ip => '123.123.123.123'}]))
       @template_1   = ensure_save(Rubix::Template.new(:name => 'rubix_spec_template_1', :host_groups => [@host_group_2]))
       @template_2   = ensure_save(Rubix::Template.new(:name => 'rubix_spec_template_2', :host_groups => [@host_group_2]))
     end

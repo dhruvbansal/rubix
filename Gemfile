@@ -19,6 +19,7 @@ end
 # Gems for testing and coverage
 group :test do
   gem 'simplecov',   ">= 0.5",   :platform => [:ruby_19],   :require => false
+  gem 'pg'
 end
 
 # Gems you would use if hacking on this gem (rather than with it)
