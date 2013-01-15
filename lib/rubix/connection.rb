@@ -114,6 +114,9 @@ module Rubix
       raise AuthenticationError.new("Could not authenticate with Zabbix API at #{uri}: #{response.error_message}") if response.error?
       raise AuthenticationError.new("Malformed response from Zabbix API: #{response.body}") unless response.string?
       @auth = response.result
+
+      raise VersionError.new("Incorrect Zabbix Server API version, should be #{SERVER_VERSION}") unless api_version == SERVER_VERSION
+      @auth
     end
 
     # Set the URI for this connection's Zabbix API server.
