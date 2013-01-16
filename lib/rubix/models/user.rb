@@ -145,6 +145,10 @@ module Rubix
     def self.find_params options={}
       get_params.merge(:filter => {:alias => options[:username], id_field => options[:id]})
     end
-    
+
+    def destroy_params
+      [id_field => id]
+    end
+
   end
 end
