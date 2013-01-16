@@ -86,12 +86,16 @@ module Rubix
     zabbix_attr :history
     zabbix_attr :trends
     zabbix_attr :status
-    zabbix_attr :frequency
+    zabbix_attr :frequency,  :required => true, :default => 60
+    zabbix_attr :name,       :required => true
 
     def initialize properties={}
       super(properties)
       self.host            = properties[:host]
       self.host_id         = properties[:host_id]
+
+      self.interface       = properties[:interface]
+      self.interface_id    = properties[:interface_id]
 
       self.template        = properties[:template]
       self.template_id     = properties[:template_id]
@@ -109,6 +113,7 @@ module Rubix
     #
 
     include Associations::BelongsToHost
+    include Associations::BelongsToInterface
     include Associations::BelongsToTemplate
     include Associations::HasManyApplications
 
@@ -119,6 +124,8 @@ module Rubix
     def create_params
       {
         :hostid       => host_id,
+        :interfaceid  => interface_id,
+        :name         => name,
         :description  => (description || 'Unknown'),
         :type         => self.class::TYPE_CODES[type],
         :key_         => key,
@@ -157,6 +164,7 @@ module Rubix
     def self.build item
       new({
             :id              => item[id_field].to_i,
+            :name            => item['name'],
             :host_id         => item['hostid'].to_i,
             :description     => item['description'],
             :type            => TYPE_NAMES[item['type'].to_i],

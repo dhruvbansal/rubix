@@ -142,7 +142,8 @@ module Rubix
     # @return [true, false]
     def validate
       self.class.properties.each_pair do |property, options|
-        raise ValidationError.new("A #{self.class.resource_name} must have a #{property}") if options[:required] && (self.send(property).nil? || self.send(property).empty?)
+        property_value = self.send property
+        raise ValidationError.new("A #{self.class.resource_name} must have a #{property}") if options[:required] && (property_value.nil? || (!property_value.is_a?(Fixnum) && property_value.empty?))
       end
       true
     end
@@ -273,7 +274,8 @@ module Rubix
       return false unless before_destroy
       response = destroy_request
       case
-      when response.has_data? && response.result.values.first.first.to_i == id
+      # Zabbix 2.0.4 returns "result":{"itemids":{"22":22}} on item.delete
+      when response.has_data? && (((tmp = response.result.values.first.first).is_a?(Array) && tmp.first.to_i == id ) || response.result.values.first.first.to_i == id)
         info("Destroyed Zabbix #{resource_name}")
         true
       when response.zabbix_error? && response.error_message =~ /does not exist/i

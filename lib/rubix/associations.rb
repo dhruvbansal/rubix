@@ -20,6 +20,7 @@ module Rubix
     autoload :BelongsToUser,        'rubix/associations/belongs_to_user'
     autoload :BelongsToUserGroup,   'rubix/associations/belongs_to_user_group'
     autoload :BelongsToMediaType,   'rubix/associations/belongs_to_media_type'
+    autoload :BelongsToInterface,   'rubix/associations/belongs_to_interface'
   end
 end
 
