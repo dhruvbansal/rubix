@@ -58,17 +58,15 @@ module Rubix
     end
 
     def self.build interface
-      p interface
       new({
             :id                  => interface[id_field].to_i,
             :host_id             => interface['hostid'],
             :main                => (interface['main'].to_i  == 1),
             :type                => self::TYPE_NAMES[interface['type'].to_i],
-            :use_ip              => (interface['useip'].to_i  == 1),
+            :use_ip              => interface['useip'],
             :dns                 => interface['dns'],
             :ip                  => interface['ip'],
           })
     end
-    
   end
 end

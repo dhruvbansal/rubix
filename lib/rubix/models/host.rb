@@ -72,7 +72,19 @@ module Rubix
     zabbix_attr :snmp_error
     zabbix_attr :snmp_errors_from
     zabbix_attr :last_access
-    
+
+    def monitored
+      @status == :monitored
+    end
+
+    def monitored= value
+      if value
+        @status = :monitored
+      else
+        @status = :not_monitored
+      end
+    end
+
     def initialize properties={}
       super(properties)
 
@@ -84,10 +96,10 @@ module Rubix
 
       self.interface_ids   = properties[:interface_ids]
       self.interfaces      = properties[:interfaces]
-      
+
       self.user_macro_ids = properties[:user_macro_ids]
       self.user_macros    = properties[:user_macros]
-      
+
       self.inventory      = properties[:inventory]
     end
 
