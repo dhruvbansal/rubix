@@ -85,7 +85,8 @@ module Rubix
         :refresh       => refresh_period,
         :type          => self.class::TYPE_CODES[type],
         :theme         => theme,
-        :rows_per_page => rows_per_page
+        :rows_per_page => rows_per_page,
+        :usrgrps       => user_group_ids.map { |id| {'usrgrpid' => id} }
       }.tap do |cp|
         cp[:passwd] = password if password && (!password.empty?)
         

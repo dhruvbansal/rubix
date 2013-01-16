@@ -26,12 +26,11 @@ module Rubix
     def truncate_all_tables
       return unless result
       begin
-        %w[actions graphs triggers items applications hosts].each do |table|
+        %w[actions graphs triggers items applications hosts usrgrp].each do |table|
           @conn.query("DELETE FROM #{table}")
         end
         @conn.query('DELETE FROM groups WHERE internal != 1')
         @conn.query(%Q[DELETE FROM users  WHERE alias    != 'Admin' AND 'alias' != 'guest'])
-        @conn.query('DELETE FROM usrgrp WHERE usrgrpid = 42')
         true
       rescue => e
         puts "Could not truncate tables: #{e.class} -- #{e.message}"

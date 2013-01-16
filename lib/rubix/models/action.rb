@@ -21,7 +21,7 @@ module Rubix
 
     zabbix_attr :name,                     :required => true
     zabbix_attr :event_source,             :default => :triggers, :required => true
-    zabbix_attr :escalation_time,          :default => 0
+    zabbix_attr :escalation_time,          :default => 60
     zabbix_attr :enabled,                  :default => true
     zabbix_attr :message_subject,          :default => MESSAGE_SUBJECT
     zabbix_attr :message_body,             :default => MESSAGE_BODY

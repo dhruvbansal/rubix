@@ -11,7 +11,7 @@ describe Rubix::Connection do
   end
 
   it "can perform an authorized GET request to the homepage" do
-    response = Rubix.connection.web_request("GET", "/")
+    response = Rubix.connection.web_request("GET", "/dashboard.php")
     response.should_not be_nil
     response.code.to_i.should == 200
     response.body.should_not include('guest')
@@ -19,7 +19,7 @@ describe Rubix::Connection do
   end
 
   it "can perform an authorized POST request to the homepage" do
-    response = Rubix.connection.web_request("POST", "/", :foo => 'bar', :baz => 'buzz')
+    response = Rubix.connection.web_request("POST", "/dashboard.php", :foo => 'bar', :baz => 'buzz')
     response.should_not be_nil
     response.code.to_i.should == 200
     response.body.should_not include('guest')
@@ -27,7 +27,7 @@ describe Rubix::Connection do
   end
 
   it "can perform an authorized multipart POST request to the homepage" do
-    response = Rubix.connection.web_request("POST", "/", :foo => File.new(data_path('test_template.xml')))
+    response = Rubix.connection.web_request("POST", "/dashboard.php", :foo => File.new(data_path('test_template.xml')))
     response.should_not be_nil
     response.code.to_i.should == 200
     response.body.should_not include('guest')

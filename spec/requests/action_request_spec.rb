@@ -5,7 +5,7 @@ describe "Actions" do
   before do
     integration_test
     @user_group = ensure_save(Rubix::UserGroup.new(:name => 'rubix_spec_user_group_1'))
-    @user       = ensure_save(Rubix::User.new(:username => 'rubix_spec_user_1', :first_name => 'rubix', :last_name => 'user', :password => 'pass'))
+    @user       = ensure_save(Rubix::User.new(:username => 'rubix_spec_user_1', :first_name => 'rubix', :last_name => 'user', :password => 'pass', :user_groups => [@user_group]))
   end
 
   after do

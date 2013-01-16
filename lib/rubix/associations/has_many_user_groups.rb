@@ -21,7 +21,7 @@ module Rubix
       
       def user_group_ids
         return @user_group_ids if @user_group_ids
-        return unless @user_groups
+        return [] unless @user_groups
         @user_group_ids = @user_groups.map(&:id)
       end
       
