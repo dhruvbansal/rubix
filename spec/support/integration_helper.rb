@@ -45,51 +45,16 @@ module Rubix
     end
 
     def self.connect_to_database
-      begin
-        require 'pg'
-        $CONN = PG::Connection.new(:host => $CONFIG['postgresql']['host'], :user => $CONFIG['postgresql']['username'],
-                                   :password => $CONFIG['postgresql']['password'], :dbname => $CONFIG['postgresql']['database'],
-                                   :port => $CONFIG['postgresql']['port'])
-      rescue => e
-        puts "Could not connect to database: #{e.class} -- #{e.message}"
-        puts e.backtrace
-        false
-      end
+      $CONN = DatabaseHelper.new $CONFIG
+      $CONN.result
     end
-    
+
     def self.truncate_all_tables
-      return unless $CONN
-      begin
-        %w[actions graphs triggers items applications hosts].each do |table|
-          $RUBIX_MYSQL.query("DELETE FROM #{table}")
-        end
-        $RUBIX_MYSQL.query('DELETE FROM groups WHERE `internal` != 1')
-        $RUBIX_MYSQL.query('DELETE FROM users  WHERE `alias`    != "Admin" AND `alias` != "guest"')
-        true
-      rescue => e
-        puts "Could not truncate tables: #{e.class} -- #{e.message}"
-        puts e.backtrace
-        false
-      end
+      $CONN.truncate_all_tables
     end
 
     def self.create_integration_test_user_and_group
-      return unless $CONN
-      begin
-        $CONN.query(%Q{INSERT INTO users        (userid, alias, name, surname, passwd, type) VALUES (42, '#{INTEGRATION_USER}', 'Rubix', 'Spec User', '#{Digest::MD5.hexdigest('rubix')}', 3)})
-        $CONN.query(%Q{INSERT INTO usrgrp       (usrgrpid, name, gui_access)                     VALUES (42, '#{INTEGRATION_GROUP}', 1)})
-        $CONN.query(%Q{INSERT INTO users_groups (id, usrgrpid, userid)                       SELECT 42, users.userid, usrgrp.usrgrpid FROM users, usrgrp WHERE users.alias = '#{INTEGRATION_USER}' AND usrgrp.name = '#{INTEGRATION_GROUP}'})
-=begin
-        $RUBIX_MYSQL.query(%Q{INSERT INTO users        (`alias`, `name`, surname, passwd, type) VALUES ("#{INTEGRATION_USER}", "Rubix", "Spec User", "#{Digest::MD5.hexdigest('rubix')}", 3)})
-        # $RUBIX_MYSQL.query(%Q{INSERT INTO usrgrp       (`name`, api_access)                     VALUES ("#{INTEGRATION_GROUP}", 1)})
-        $RUBIX_MYSQL.query(%Q{INSERT INTO users_groups (usrgrpid, userid)                       SELECT users.userid, usrgrp.usrgrpid FROM users, usrgrp WHERE users.alias = '#{INTEGRATION_USER}' AND usrgrp.name = '#{INTEGRATION_GROUP}'})
-=end
-        true
-      rescue => e
-        puts "Could not create integration user or group: #{e.class} -- #{e.message}"
-        puts e.backtrace
-        false
-      end
+      $CONN.create_integration_test_user_and_group(INTEGRATION_USER, INTEGRATION_GROUP, INTEGRATION_PASSWORD)
     end
 
     def self.connect_to_api
@@ -107,7 +72,7 @@ module Rubix
 
     def integration_test
       if $RUBIX_INTEGRATION
-        raise Rubix::Error.new("Could not truncate tables in MySQL.")         unless IntegrationHelper.truncate_all_tables
+        raise Rubix::Error.new("Could not truncate tables.")         unless IntegrationHelper.truncate_all_tables
         raise Rubix::Error.new("Could not create integration user or group.") unless IntegrationHelper.create_integration_test_user_and_group
         raise Rubix::Error.new("Could not connect to Zabbixi API.")           unless IntegrationHelper.connect_to_api
       else
