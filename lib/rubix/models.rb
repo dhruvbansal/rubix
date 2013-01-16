@@ -16,4 +16,6 @@ module Rubix
   autoload :User,            'rubix/models/user'
   autoload :UserGroup,       'rubix/models/user_group'
   autoload :Medium,          'rubix/models/medium'
+  autoload :Interface,       'rubix/models/interface'
+  autoload :Inventory,       'rubix/models/inventory'
 end

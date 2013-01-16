@@ -56,14 +56,15 @@ module Rubix
         false
       end
     end
-
-    # These are the tables we'll truncate in the database.
-    RUBIX_TABLES_TO_TRUNCATE = %w[actions conditions operations opconditions applications groups hostmacro hosts hosts_groups hosts_templates items items_applications profiles triggers trigger_depends history sessions media_type scripts users usrgrp users_groups]
-
+    
     def self.truncate_all_tables
       return unless $CONN
       begin
-        RUBIX_TABLES_TO_TRUNCATE.each { |table| $CONN.query("TRUNCATE TABLE #{table} CASCADE") }
+        %w[actions graphs triggers items applications hosts].each do |table|
+          $RUBIX_MYSQL.query("DELETE FROM #{table}")
+        end
+        $RUBIX_MYSQL.query('DELETE FROM groups WHERE `internal` != 1')
+        $RUBIX_MYSQL.query('DELETE FROM users  WHERE `alias`    != "Admin" AND `alias` != "guest"')
         true
       rescue => e
         puts "Could not truncate tables: #{e.class} -- #{e.message}"
@@ -78,6 +79,11 @@ module Rubix
         $CONN.query(%Q{INSERT INTO users        (userid, alias, name, surname, passwd, type) VALUES (42, '#{INTEGRATION_USER}', 'Rubix', 'Spec User', '#{Digest::MD5.hexdigest('rubix')}', 3)})
         $CONN.query(%Q{INSERT INTO usrgrp       (usrgrpid, name, gui_access)                     VALUES (42, '#{INTEGRATION_GROUP}', 1)})
         $CONN.query(%Q{INSERT INTO users_groups (id, usrgrpid, userid)                       SELECT 42, users.userid, usrgrp.usrgrpid FROM users, usrgrp WHERE users.alias = '#{INTEGRATION_USER}' AND usrgrp.name = '#{INTEGRATION_GROUP}'})
+=begin
+        $RUBIX_MYSQL.query(%Q{INSERT INTO users        (`alias`, `name`, surname, passwd, type) VALUES ("#{INTEGRATION_USER}", "Rubix", "Spec User", "#{Digest::MD5.hexdigest('rubix')}", 3)})
+        # $RUBIX_MYSQL.query(%Q{INSERT INTO usrgrp       (`name`, api_access)                     VALUES ("#{INTEGRATION_GROUP}", 1)})
+        $RUBIX_MYSQL.query(%Q{INSERT INTO users_groups (usrgrpid, userid)                       SELECT users.userid, usrgrp.usrgrpid FROM users, usrgrp WHERE users.alias = '#{INTEGRATION_USER}' AND usrgrp.name = '#{INTEGRATION_GROUP}'})
+=end
         true
       rescue => e
         puts "Could not create integration user or group: #{e.class} -- #{e.message}"

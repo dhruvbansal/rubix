@@ -71,7 +71,7 @@ module Rubix
     def initialize properties={}
       @properties = properties
       self.class.properties.keys.each do |property|
-        self.send("#{property}=", properties[property])
+        self.send("#{property}=", (properties[property] || properties[property.to_sym]))
       end
       @id         = properties[:id]
     end
@@ -399,10 +399,12 @@ module Rubix
         if obj.save
           obj
         else
+          error("Error creating Zabbix #{resource_name} using #{options.inspect}: #{response.error_message}")
           false
         end
       else
-        error("Error creating Zabbix #{resource_name} using #{options.inspect}: #{response.error_message}")
+        # should probably never get here...
+        error("Error finding or creating Zabbix #{resource_name} using #{options.inspect}: #{response.error_message}")
         false
       end
     end
