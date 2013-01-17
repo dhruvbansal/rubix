@@ -119,12 +119,7 @@ module Rubix
     end
 
     def create_history item
-      raise Rubix::Error.new("Not connected to MySQL") unless $RUBIX_MYSQL
-      (1..10).to_a.collect do |i|
-        history = { "itemid" => item.id.to_s, "clock" => (Time.now.to_i - 5*i).to_s, "value" => rand(100).to_s }
-        $RUBIX_MYSQL.query("INSERT INTO history_uint (#{history.keys.join(', ')}) VALUES (#{history.values.join(', ')})")
-        history
-      end
+      $CONN.create_history item
     end
 
     def truncate_all_tables

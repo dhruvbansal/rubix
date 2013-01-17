@@ -26,7 +26,7 @@ module Rubix
     def truncate_all_tables
       return unless result
       begin
-        %w[actions graphs triggers items applications hosts usrgrp media_type].each do |table|
+        %w[actions graphs triggers items applications hosts usrgrp media_type scripts].each do |table|
           @conn.query("DELETE FROM #{table}")
         end
         @conn.query('DELETE FROM groups WHERE internal != 1')
@@ -50,6 +50,15 @@ module Rubix
         puts "Could not create integration user or group: #{e.class} -- #{e.message}"
         puts e.backtrace
         false
+      end
+    end
+
+    def create_history item
+      raise Rubix::Error.new("Not connected to database") unless result
+      (1..10).to_a.collect do |i|
+        history = { "itemid" => item.id.to_s, "clock" => (Time.now.to_i - 5*i).to_s, "value" => rand(100).to_s, "ns" => "0" }
+        @conn.query("INSERT INTO history_uint (#{history.keys.join(', ')}) VALUES (#{history.values.join(', ')})")
+        history
       end
     end
   end
