@@ -75,7 +75,6 @@ module Rubix
     
     def create_params
       {
-        :templateid   => (template_id || host_id),
         :description  => (description || 'Unknown'),
         :expression   => expression,
         :priority     => self.class::PRIORITY_CODES[priority],
@@ -86,7 +85,7 @@ module Rubix
     end
 
     def self.get_params
-      super().merge(:select_items => :refer)
+      super().merge(:selectItems => :refer)
     end
     
     def self.find_params options={}
@@ -115,7 +114,7 @@ module Rubix
             :status          => STATUS_NAMES[trigger['status'].to_i],
             :priority        => PRIORITY_NAMES[trigger['priority'].to_i],
             :item_ids        => (trigger['items'] || []).map { |item| item['itemid'].to_i }
-          }.merge(host_or_template_params_from_id(trigger['templateid'].to_i)))
+          }.merge(host_or_template_params_from_id(trigger['hosts'].first['hostid'].to_i)))
     end
 
     def self.host_or_template_params_from_id id
