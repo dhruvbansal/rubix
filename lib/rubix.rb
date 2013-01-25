@@ -7,8 +7,6 @@ require 'rubix/monitors'
 
 module Rubix
 
-  SERVER_VERSION = '2.0.4'.freeze
-
   autoload :Connection,     'rubix/connection'
   autoload :Response,       'rubix/response'
   autoload :Sender,         'rubix/sender'

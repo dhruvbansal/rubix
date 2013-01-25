@@ -115,7 +115,7 @@ module Rubix
       raise AuthenticationError.new("Malformed response from Zabbix API: #{response.body}") unless response.string?
       @auth = response.result
 
-      raise VersionError.new("Incorrect Zabbix Server API version, should be #{SERVER_VERSION}") unless api_version == SERVER_VERSION
+      raise VersionError.new("Zabbix server has API version <#{api_version}>.  Can only support Zabbix server API version >= 1.4}") unless supports_server_version?
       @auth
     end
 
@@ -139,6 +139,11 @@ module Rubix
 
     def api_version
       @api_version ||= request('apiinfo.version', {}).result
+    end
+
+    def supports_server_version?
+      parts = api_version.to_s.split('.').map(&:to_i)
+      parts.size >= 2 && parts[0] >= 1 && parts[1] >= 4
     end
 
     protected
