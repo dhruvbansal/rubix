@@ -19,11 +19,6 @@ Gem::Specification.new do |gem|
   gem.executables  = ['zabbix_api', 'zabbix_pipe']
   gem.require_path = 'lib'
 
-  gem.add_development_dependency 'rake'
-  gem.add_development_dependency 'rspec'
-  gem.add_development_dependency 'mysql2'
-  gem.add_development_dependency 'oj'    unless RUBY_PLATFORM =~ /java/
-
   gem.add_dependency 'multi_json'
   gem.add_dependency 'configliere',   '>= 0.4.16'
   gem.add_dependency 'multipart-post'

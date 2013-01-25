@@ -8,18 +8,20 @@ gemspec
 group :development do
   gem 'bundler',     "~> 1.1"
   gem 'rake',                    :require => false
-  gem 'yard',        ">= 0.7",   :require => false
 end
 
 group :docs do
+  gem 'yard',        ">= 0.7",   :require => false  
   gem 'redcarpet',   ">= 2.1",   :platform => [:ruby]
   gem 'kramdown',                :platform => [:jruby]
 end
 
 # Gems for testing and coverage
 group :test do
+  gem 'rspec'
   gem 'simplecov',   ">= 0.5",   :platform => [:ruby_19],   :require => false
   gem 'pg'
+  gem 'mysql2'
 end
 
 # Gems you would use if hacking on this gem (rather than with it)
