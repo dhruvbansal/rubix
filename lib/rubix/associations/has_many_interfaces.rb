@@ -34,5 +34,3 @@ module Rubix
     end
   end
 end
-
-      

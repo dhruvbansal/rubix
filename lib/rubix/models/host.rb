@@ -145,15 +145,12 @@ module Rubix
       end
     end
     
-    # def update_params
-    #   create_params.tap do |cp|
-    #     cp.delete(:groups)
-    #     cp.delete(:templates)
-    #     cp.delete(:macros)
-    #     cp.delete(:interfaces)
-    #     cp[id_field] = id
-    #   end
-    # end
+    def update_params
+      create_params.tap do |cp|
+        cp.delete(:interfaces)
+        cp[id_field] = id
+      end
+    end
 
     # def before_update
     #   response = request('host.massUpdate', { :interfaces => interface_params, :groups => host_group_params, :templates => template_params, :macros => user_macro_params, :hosts => [{id_field => id}]})

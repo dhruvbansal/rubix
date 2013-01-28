@@ -34,14 +34,14 @@ module Rubix
     include Associations::BelongsToHost
 
     #
-    # == Validation == 
+    # == Validation ==
     #
 
     def validate
       raise ValidationError.new("An interface must have a host") unless host_id || host
       raise ValidationError.new("Either an IP address or a DNS name must be set") if (ip.nil? || ip.empty?) && (dns.nil? || dns.empty?)
     end
-    
+
     #
     # == Requests ==
     #
@@ -55,6 +55,10 @@ module Rubix
         :port          => port,
         :type          => self.class::TYPE_CODES[type]
       }
+    end
+
+    def update_params
+      create_params.merge(id_field => id)
     end
 
     def self.build interface
