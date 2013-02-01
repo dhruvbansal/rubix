@@ -26,7 +26,7 @@ module Rubix
     def truncate_all_tables
       return unless result
       begin
-        %w[actions graphs triggers items applications hosts media_type scripts].each do |table|
+        %w[screens actions graphs triggers items applications hosts media_type scripts].each do |table|
           @conn.query("DELETE FROM #{table}")
         end
         @conn.query('DELETE FROM groups WHERE internal != 1')

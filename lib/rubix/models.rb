@@ -19,4 +19,6 @@ module Rubix
   autoload :Interface,       'rubix/models/interface'
   autoload :Inventory,       'rubix/models/inventory'
   autoload :Graph,           'rubix/models/graph'
+  autoload :Screen,          'rubix/models/screen'
+  autoload :ScreenItem,      'rubix/models/screen_item'
 end
