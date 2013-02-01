@@ -18,4 +18,5 @@ module Rubix
   autoload :Medium,          'rubix/models/medium'
   autoload :Interface,       'rubix/models/interface'
   autoload :Inventory,       'rubix/models/inventory'
+  autoload :Graph,           'rubix/models/graph'
 end
