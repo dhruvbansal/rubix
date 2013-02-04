@@ -8,8 +8,7 @@ module Rubix
     def initialize properties={}
       super(properties)
 
-      self.screen_item_ids = properties[:screen_item_ids]
-      self.screen_items    = properties[:screen_items].map { |si| ScreenItem.new(si) } if properties[:screen_items]
+      self.screen_items    = properties[:screen_items].map { |si| si.is_a?(ScreenItem) ? si : ScreenItem.new(si) } if properties[:screen_items]
     end
 
     zabbix_attr :name,   :required => true
@@ -35,10 +34,6 @@ module Rubix
       }
     end
 
-    def update_params
-      super
-    end
-
     def self.find_params options={}
       super().merge({
                       :selectScreenItems => 'refer',
@@ -53,7 +48,7 @@ module Rubix
       params = {
         :id   => app[id_field].to_i,
         :name => app['name'],
-        :screen_items => app['screenitems']
+        :screen_items => app['screenitems'].map { |si| ScreenItem.build si }
       }
       new(params)
     end

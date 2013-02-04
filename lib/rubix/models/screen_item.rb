@@ -77,7 +77,18 @@ module Rubix
         :rowspan => rowspan,
         :resourceid => resource_id,
         :resourcetype => RESOURCE_TYPE_CODES[resource_type],
-        :screenid => screen_id
+        :screenid => screen_id,
+        :dynamic => dynamic,
+        :elements => elements,
+        :halign => H_ALIGN_CODES[halign],
+        :valign => V_ALIGN_CODES[valign],
+        :height => height,
+        :width => width,
+        :x => x,
+        :y => y,
+        :sort_triggers => sort_triggers,
+        :style => style,
+        :url => url
       }
     end
 
@@ -94,10 +105,25 @@ module Rubix
                     })
     end
 
-    def self.build app
+    def self.build params
       params = {
-        :id   => app[id_field].to_i,
-        :name => app['name']
+        :id   => params[id_field].to_i,
+        :colspan => params["colspan"],
+        :rowspan => params["rowspan"],
+        :resource_id => params["resourceid"],
+        :resource_type => RESOURCE_TYPE_NAMES[params["resourcetype"].to_i],
+        :screen_id => params["screenid"],
+        :dynamic => params["dynamic"],
+        :elements => params["elements"],
+        :halign => H_ALIGN_NAMES[params["halign"].to_i],
+        :valign => V_ALIGN_NAMES[params["valign"].to_i],
+        :height => params["height"],
+        :width => params["width"],
+        :x => params["x"],
+        :y => params["y"],
+        :sort_triggers => params["sort_triggers"],
+        :style => params["style"],
+        :url => params["url"]
       }
       new(params)
     end
