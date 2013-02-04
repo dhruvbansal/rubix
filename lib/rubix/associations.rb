@@ -11,6 +11,7 @@ module Rubix
     autoload :HasManyUserGroups,    'rubix/associations/has_many_user_groups'
     autoload :HasManyConditions,    'rubix/associations/has_many_conditions'
     autoload :HasManyInterfaces,    'rubix/associations/has_many_interfaces'
+    autoload :HasManyScreenItems,   'rubix/associations/has_many_screen_items'
     autoload :HasInventory,         'rubix/associations/has_inventory'
     
     autoload :BelongsToHost,        'rubix/associations/belongs_to_host'

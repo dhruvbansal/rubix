@@ -3,8 +3,6 @@ require 'spec_helper'
 describe "ScreenItems" do
 
   before do
-    Rubix.logger = Logger.new STDOUT
-    Rubix.logger.level = Logger::DEBUG
     integration_test
 
     @screen = ensure_save(Rubix::Screen.new(:name => 'screen_1'))
