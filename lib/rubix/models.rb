@@ -21,4 +21,5 @@ module Rubix
   autoload :Graph,           'rubix/models/graph'
   autoload :Screen,          'rubix/models/screen'
   autoload :ScreenItem,      'rubix/models/screen_item'
+  autoload :Message,         'rubix/models/message'
 end

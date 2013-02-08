@@ -91,7 +91,7 @@ module Rubix
     end
 
     def self.get_params
-      super().merge({:select_conditions => :refer, :select_operations => :refer})
+      super().merge({:selectConditions => :refer, :selectOperations => :refer})
     end
 
     def self.build action
@@ -107,8 +107,8 @@ module Rubix
             :send_recovery_message    => (action['recovery_msg'].to_i == 1),
             :recovery_message_subject => action['r_shortdata'],
             :recovery_message_body    => action['r_longdata'],
-            :conditions               => (action['conditions'] || []).map { |c| Condition.build(c) },
-            :operations               => (action['operations'] || []).map { |o| Operation.build(o) }
+            :conditions               => (action['conditions'] || []).map { |id, c| Condition.build(c) },
+            :operations               => (action['operations'] || []).map { |id, o| Operation.build(o) }
           })
     end
     

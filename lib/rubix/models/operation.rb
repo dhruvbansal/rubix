@@ -16,21 +16,11 @@ module Rubix
       :host_disable      => 9
     }
 
-    # Numeric codes for the type of object that should be notified.
-    # Default will be 'group'.
-    zabbix_define :NOTIFICATION_OBJECT, {
-      :user       => 0,
-      :user_group => 1
-    }
-
     #
     # == Properties & Finding ==
     #
 
     zabbix_attr :type,                :default => :message, :required => true
-    zabbix_attr :message_subject,     :default => Action::MESSAGE_SUBJECT
-    zabbix_attr :message_body,        :default => Action::MESSAGE_BODY
-    zabbix_attr :use_default_message, :default => true
     zabbix_attr :escalation_time,     :default => 0
     zabbix_attr :start,               :default => 1
     zabbix_attr :stop,                :default => 1
@@ -42,35 +32,16 @@ module Rubix
 
     def initialize properties={}
       super(properties)
-      self.step          = properties[:step] if properties[:step]
+      self.step           = properties[:step] if properties[:step]
 
-      self.user_id       = properties[:user_id]
-      self.user          = properties[:user]
+      self.user_ids       = properties[:user_ids]
+      self.users          = properties[:users]
 
-      self.user_group_id = properties[:user_group_id]
-      self.user_group    = properties[:user_group]
+      self.user_group_ids = properties[:user_group_ids]
+      self.user_groups    = properties[:user_groups]
 
-      self.conditions    = (properties[:conditions] || [])
-
-      self.media_type    = properties[:media_type]
-      self.media_type_id = properties[:media_type_id]
-    end
-
-    def notification_object_name
-      case
-      when user_id       then :user
-      when user_group_id then :user_group
-      else
-        raise Error.new("An #{resource_name} must have either a user or a user group.")
-      end
-    end
-      
-    def notification_object_id
-      if user_id || user_group_id
-        return user_id || user_group_id
-      else
-        raise Error.new("An #{resource_name} must have either a user or a user group.")
-      end
+      self.conditions     = (properties[:conditions] || [])
+      self.message        = properties[:message] || Message.new
     end
 
     #
@@ -78,9 +49,9 @@ module Rubix
     #
 
     include Associations::HasManyConditions
-    include Associations::BelongsToUser
-    include Associations::BelongsToUserGroup
-    include Associations::BelongsToMediaType
+    include Associations::HasManyUsers
+    include Associations::HasManyUserGroups
+    include Associations::HasMessage
 
     #
     # == Requests ==
@@ -89,18 +60,17 @@ module Rubix
     def create_params
       {
         :operationtype => self.class::TYPE_CODES[type],
-        :object        => self.class::NOTIFICATION_OBJECT_CODES[notification_object_name],
-        :objectid      => notification_object_id,
-        :shortdata     => message_subject,
-        :longdata      => message_body,
-        :default_msg   => (use_default_message ? 1 : 0),
         :evaltype      => Condition::JOIN_CODES[condition_operator],
         :esc_period    => escalation_time,
         :esc_step_from => start,
         :esc_step_to   => stop
       }.tap do |cp|
-        cp[:opconditions] = conditions.map(&:to_hash) unless conditions.empty?
-        cp[:opmediatypes] = [{ :mediatypeid => media_type_id }] if media_type_id
+        cp[:opconditions]  = conditions.map(&:to_hash) unless conditions.empty?
+        if user_ids
+          cp[:opmessage_usr] = user_ids.map { |id| { :userid => id } } unless user_ids.empty?
+        end
+        cp[:opmessage_grp] = user_group_ids.map { |id| { :usrgrpid => id } } unless user_group_ids.empty?
+        cp[:opmessage] = message.to_hash
       end
     end
 
@@ -108,25 +78,18 @@ module Rubix
       new({
             :id                  => operation[id_field].to_i,
             :type                => self::TYPE_NAMES[operation['operationtype'].to_i],
-            :message_subject     => operation['shortdata'],
-            :message_body        => operation['longdata'],
             :escalation_period   => operation['esc_period'].to_i,
-            :use_default_message => (operation['default_msg'].to_i == 1),
             :condition_operator  => Condition::JOIN_NAMES[operation['evaltype'].to_i],
             :conditions          => (operation['opconditions'] || []).map { |c| Condition.build(c) },
             :start               => operation['esc_step_from'].to_i,
-            :stop                => operation['esc_step_to'].to_i
+            :stop                => operation['esc_step_to'].to_i,
+            :user_ids            => (operation['opmessage_usr'] || []).map { |e| e['userid'].to_i },
+            :user_group_ids      => (operation['opmessage_grp'] || []).map { |e| e['usrgrpid'].to_i }
           }).tap do |o|
-        if self::NOTIFICATION_OBJECT_NAMES[operation['object'].to_i] == :user
-          o.user_id = operation['objectid']
-        else
-          o.user_group_id = operation['objectid']
-        end
-        if (operation['opmediatypes'] || []).first
-          o.media_type_id = (operation['opmediatypes'] || []).first['mediatypeid'].to_i
-        end
+            if operation['opmessage']
+              o.message = Message.build(operation['opmessage'])
+            end
       end
     end
-    
   end
 end
