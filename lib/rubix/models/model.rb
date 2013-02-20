@@ -134,6 +134,10 @@ module Rubix
       new_record? ? create : update
     end
 
+    def save!
+      raise Rubix::Error.new(Rubix.connection.last_response.body) unless save
+    end
+
     # Validate this record.
     #
     # Override this method in a subclass and have it raise a
