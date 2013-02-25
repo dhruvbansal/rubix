@@ -179,7 +179,7 @@ module Rubix
             
             :host_group_ids => host['groups'].map { |group| group['groupid'].to_i },
             :template_ids   => host['parentTemplates'].map { |template| (template['templateid'] || template[id_field]).to_i },
-            :user_macros    => host['macros'].map { |um| UserMacro.new(:host_id => um[id_field].to_i, :id => um['hostmacroid'], :value => um['value'], :macro => um['macro']) },
+            :user_macros    => host['macros'].map { |id, um| UserMacro.new(:host_id => um[id_field].to_i, :id => um['hostmacroid'], :value => um['value'], :macro => um['macro']) },
             :interfaces     => host['interfaces'].values,
             
             :status         => self::STATUS_NAMES[host['status'].to_i],
