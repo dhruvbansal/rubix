@@ -12,7 +12,7 @@ module Rubix
     end
 
     zabbix_attr :name,   :required => true
-    zabbix_attr :wsize,  :default => 1
+    zabbix_attr :vsize,  :default => 1
     zabbix_attr :hsize,  :default => 1
 
     #
@@ -29,7 +29,7 @@ module Rubix
 
     def create_params
       {
-        :name => name, :hsize => hsize, :wsize => wsize,
+        :name => name, :hsize => hsize, :vsize => vsize,
         :screenitems => self.screen_items.map { |si| si.create_params }
       }
     end
@@ -48,7 +48,7 @@ module Rubix
       params = {
         :id   => app[id_field].to_i,
         :name => app['name'],
-        :screen_items => app['screenitems'].map { |si| ScreenItem.build si }
+        :screen_items => (app['screenitems'] || []).map { |si| ScreenItem.build si }
       }
       new(params)
     end
