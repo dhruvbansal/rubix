@@ -135,7 +135,8 @@ module Rubix
     end
 
     def save!
-      raise Rubix::Error.new(Rubix.connection.last_response.body) unless save
+      raise Rubix::Error.new(Rubix.connection.last_response.body + "\n" +
+                            Rubix.connection.last_request.inspect) unless save
     end
 
     # Validate this record.

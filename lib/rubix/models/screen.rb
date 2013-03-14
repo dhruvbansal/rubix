@@ -46,12 +46,13 @@ module Rubix
 
     def self.build app
       params = {
-        :id   => app[id_field].to_i,
-        :name => app['name'],
+        :id           => app[id_field].to_i,
+        :name         => app['name'],
+        :vsize        => app['vsize'],
+        :hsize        => app['hsize'],
         :screen_items => (app['screenitems'] || []).map { |si| ScreenItem.build si }
       }
       new(params)
     end
   end
 end
-

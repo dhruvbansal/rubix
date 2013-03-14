@@ -42,6 +42,9 @@ module Rubix
     # @return [Rubix::Response] the last response from the Zabbix API -- useful for logging purposes
     attr_reader :last_response
 
+    # @return [Hash] the last request to the Zabbix API -- useful for debugging purposes
+    attr_reader :last_request
+
     # Set up a connection to a Zabbix API.
     #
     # The +uri_or_string+ can be either a string or a <tt>URI</tt>
@@ -74,6 +77,8 @@ module Rubix
     # @return [Rubix::Response]
     def request method, params
       authorize! unless authorized?
+      @last_request = {:method  => method, :params  => params}
+
       response = till_response do
         send_api_request :jsonrpc => "2.0",
         :id      => request_id,
