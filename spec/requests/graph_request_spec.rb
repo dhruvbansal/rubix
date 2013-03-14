@@ -4,6 +4,8 @@ describe "Graphs" do
 
   before do
     integration_test
+    Rubix.logger = Logger.new STDOUT
+    Rubix.logger.level = Logger::DEBUG
     @host_group = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1'))
     @host     = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group], :interfaces => ['ip' => '123.123.123.123', 'main' => 1]))
     @host = Rubix::Host.find(:id => @host.id)

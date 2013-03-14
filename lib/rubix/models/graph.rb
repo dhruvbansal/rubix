@@ -1,17 +1,18 @@
 module Rubix
   class Graph < Model
+    include Associations::HasManyGraphItems
     #
     # == Properties & Finding ==
     #
 
     def initialize properties={}
       super(properties)
+      self.graph_items = properties[:graph_items].map { |gi| gi.is_a?(GraphItem) ? gi : GraphItem.new(gi) } if properties[:graph_items]
     end
 
     zabbix_attr :name,   :required => true
     zabbix_attr :width,  :required => true
     zabbix_attr :height, :required => true
-    zabbix_attr :graph_items
 
     #
     # == Validation =
@@ -20,8 +21,8 @@ module Rubix
     def validate
       raise ValidationError.new("A graph must have at least one graph item.") if graph_items.nil? || graph_items.empty?
       graph_items.each do |gi|
-        raise ValidationError.new("A graph item must have item_id property.") unless gi[:item_id]
-        raise ValidationError.new("A graph item must have color property.")   unless gi[:color]
+        raise ValidationError.new("A graph item must have item_id property.") unless gi.item_id
+        raise ValidationError.new("A graph item must have color property.")   unless gi.color
       end
       true
     end
@@ -32,10 +33,9 @@ module Rubix
 
     def create_params
       {
-        :name => name, :height => height, :width => width
-      }.tap do |cp|
-        cp[:gitems] = graph_items.map { |gi| {:itemid => gi[:item_id], :color => gi[:color]}}
-      end
+        :name => name, :height => height, :width => width,
+        :gitems => self.graph_items.map { |gi| gi.create_params }
+      }
     end
 
     def update_params
@@ -44,6 +44,7 @@ module Rubix
 
     def self.find_params options={}
       super().merge({
+                      :selectGraphItems => 'extend',
                       :filter => {
                         :name   => options[:name],
                         id_field => options[:id]
@@ -54,7 +55,8 @@ module Rubix
     def self.build app
       params = {
         :id   => app[id_field].to_i,
-        :name => app['name']
+        :name => app['name'],
+        :graph_items => (app['gitems'] || []).map { |id, gi| GraphItem.build gi }
       }
       new(params)
     end

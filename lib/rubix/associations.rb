@@ -12,6 +12,7 @@ module Rubix
     autoload :HasManyConditions,    'rubix/associations/has_many_conditions'
     autoload :HasManyInterfaces,    'rubix/associations/has_many_interfaces'
     autoload :HasManyScreenItems,   'rubix/associations/has_many_screen_items'
+    autoload :HasManyGraphItems,    'rubix/associations/has_many_graph_items'
     autoload :HasInventory,         'rubix/associations/has_inventory'
     autoload :HasMessage,           'rubix/associations/has_message'
 
