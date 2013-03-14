@@ -5,7 +5,8 @@ describe "TimeSeries" do
   before do
     integration_test
     @host_group = ensure_save(Rubix::HostGroup.new(:name => 'rubix_spec_host_group_1'))
-    @host       = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group], :ip => '123.123.123.123'))
+    @host       = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group], :interfaces => ['ip' => '123.123.123.123', 'main' => 1]))
+    @host       = Rubix::Host.find(:id => @host.id) # FIXME reread host interfaces after creation
   end
 
   after do
@@ -44,7 +45,7 @@ describe "TimeSeries" do
   describe "when the item exists" do
 
     before do
-      @item = ensure_save(Rubix::Item.new(:host_id => @host.id, :key => 'foo.bar.baz', :value_type => :unsigned_int, :description => "rubix item description"))
+      @item = ensure_save(Rubix::Item.new(:host_id => @host.id, :interface_id => @host.interfaces.first.id, :key => 'foo.bar.baz', :value_type => :unsigned_int, :name => "rubix item description"))
       @history = create_history(@item)
     end
 

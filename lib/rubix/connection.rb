@@ -42,6 +42,9 @@ module Rubix
     # @return [Rubix::Response] the last response from the Zabbix API -- useful for logging purposes
     attr_reader :last_response
 
+    # @return [Hash] the last request to the Zabbix API -- useful for debugging purposes
+    attr_reader :last_request
+
     # Set up a connection to a Zabbix API.
     #
     # The +uri_or_string+ can be either a string or a <tt>URI</tt>
@@ -74,6 +77,8 @@ module Rubix
     # @return [Rubix::Response]
     def request method, params
       authorize! unless authorized?
+      @last_request = {:method  => method, :params  => params}
+
       response = till_response do
         send_api_request :jsonrpc => "2.0",
         :id      => request_id,
@@ -114,6 +119,9 @@ module Rubix
       raise AuthenticationError.new("Could not authenticate with Zabbix API at #{uri}: #{response.error_message}") if response.error?
       raise AuthenticationError.new("Malformed response from Zabbix API: #{response.body}") unless response.string?
       @auth = response.result
+
+      raise VersionError.new("Incorrect Zabbix Server API version #{api_version}, should be one of #{SERVER_VERSIONS.join(', ')}") unless SERVER_VERSIONS.include? api_version
+      @auth
     end
 
     # Set the URI for this connection's Zabbix API server.
@@ -132,6 +140,10 @@ module Rubix
         @server.use_ssl = true
       end
       return @server
+    end
+
+    def api_version
+      @api_version ||= request('apiinfo.version', {}).result
     end
 
     protected

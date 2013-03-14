@@ -18,6 +18,7 @@ describe Rubix::Connection do
     @mock_response.stub!(:body).and_return(@blah_response)
     
     @connection = Rubix::Connection.new('localhost/api.php', 'username', 'password')
+    @connection.stub!(:api_version).and_return(Rubix::SERVER_VERSION)
   end
 
   describe "sending API requests" do

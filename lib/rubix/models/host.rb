@@ -5,7 +5,6 @@ module Rubix
     #
     # == Properties & Finding ==
     #
-    
     # The numeric codes for the various status types.
     zabbix_define :STATUS, {
       :monitored     => 0,
@@ -73,7 +72,19 @@ module Rubix
     zabbix_attr :snmp_error
     zabbix_attr :snmp_errors_from
     zabbix_attr :last_access
-    
+
+    def monitored
+      @status == :monitored
+    end
+
+    def monitored= value
+      if value
+        @status = :monitored
+      else
+        @status = :not_monitored
+      end
+    end
+
     def initialize properties={}
       super(properties)
 
@@ -85,10 +96,10 @@ module Rubix
 
       self.interface_ids   = properties[:interface_ids]
       self.interfaces      = properties[:interfaces]
-      
+
       self.user_macro_ids = properties[:user_macro_ids]
       self.user_macros    = properties[:user_macros]
-      
+
       self.inventory      = properties[:inventory]
     end
 
@@ -134,15 +145,12 @@ module Rubix
       end
     end
     
-    # def update_params
-    #   create_params.tap do |cp|
-    #     cp.delete(:groups)
-    #     cp.delete(:templates)
-    #     cp.delete(:macros)
-    #     cp.delete(:interfaces)
-    #     cp[id_field] = id
-    #   end
-    # end
+    def update_params
+      create_params.tap do |cp|
+        cp.delete(:interfaces)
+        cp[id_field] = id
+      end
+    end
 
     # def before_update
     #   response = request('host.massUpdate', { :interfaces => interface_params, :groups => host_group_params, :templates => template_params, :macros => user_macro_params, :hosts => [{id_field => id}]})
@@ -171,7 +179,7 @@ module Rubix
             
             :host_group_ids => host['groups'].map { |group| group['groupid'].to_i },
             :template_ids   => host['parentTemplates'].map { |template| (template['templateid'] || template[id_field]).to_i },
-            :user_macros    => host['macros'].map { |um| UserMacro.new(:host_id => um[id_field].to_i, :id => um['hostmacroid'], :value => um['value'], :macro => um['macro']) },
+            :user_macros    => host['macros'].map { |id, um| UserMacro.new(:host_id => um[id_field].to_i, :id => um['hostmacroid'], :value => um['value'], :macro => um['macro']) },
             :interfaces     => host['interfaces'].values,
             
             :status         => self::STATUS_NAMES[host['status'].to_i],

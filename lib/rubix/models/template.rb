@@ -48,11 +48,11 @@ module Rubix
     end
 
     def destroy_params
-      [{id_field => id}]
+      [id]
     end
 
     def self.get_params
-      super().merge(:select_groups => :refer, :select_hosts => :refer)
+      super().merge(:selectGroups => :refer, :selectHosts => :refer)
     end
 
     def self.find_params options={}
@@ -75,15 +75,17 @@ module Rubix
     # Options which control the template import process and the Zabbix
     # keys they need to be mapped to.
     IMPORT_OPTIONS = {
-      :update_hosts     => 'rules[host][exist]',
-      :add_hosts        => 'rules[host][missed]',
-      :update_items     => 'rules[item][exist]',
-      :add_items        => 'rules[item][missed]',
-      :update_triggers  => 'rules[trigger][exist]',
-      :add_triggers     => 'rules[trigger][missed]',
-      :update_graphs    => 'rules[graph][exist]',
-      :add_graphs       => 'rules[graph][missed]',
-      :update_templates => 'rules[template][exist]'
+      :add_groups       => 'rules[groups][createMissing]',
+      :update_hosts     => 'rules[host][updateExisting]',
+      :add_hosts        => 'rules[host][createMissing]',
+      :update_templates => 'rules[templates][updateExisting]',
+      :add_templates    => 'rules[templates][createMissing]',
+      :update_items     => 'rules[items][updateExisting]',
+      :add_items        => 'rules[items][createMissing]',
+      :update_triggers  => 'rules[triggers][updateExisting]',
+      :add_triggers     => 'rules[triggers][createMissing]',
+      :update_graphs    => 'rules[graphs][updateExisting]',
+      :add_graphs       => 'rules[graphs][createMissing]',
     }.freeze
 
     # Import/update a template from XML contained in an open file
@@ -98,17 +100,16 @@ module Rubix
     # or <tt>:add_graphs</tt>, all of which default to true.  (Linked
     # templates are controlled with <tt>:update_templates</tt>.)
     def self.import fh, options={}
-      response = web_request("POST", "/templates.php", import_options(options).merge(:import_file => fh))
+      response = web_request("POST", "/conf.import.php", import_options(options).merge(:import_file => fh))
       File.open('/tmp/output.html', 'w') { |f| f.puts(response.body) }
     end
 
     def self.import_options options
       {}.tap do |o|
         self::IMPORT_OPTIONS.each_pair do |name, zabbix_name|
-          o[zabbix_name] = 'yes' unless options[name] == false
+          o[zabbix_name] = '1' unless options[name] == false
         end
       end
     end
-    
   end
 end

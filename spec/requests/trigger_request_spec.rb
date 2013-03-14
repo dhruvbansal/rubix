@@ -8,13 +8,15 @@ describe "Triggers" do
     
     @template_1      = ensure_save(Rubix::Template.new(:name => 'rubix_spec_template_1', :host_groups => [@host_group]))
     @template_2      = ensure_save(Rubix::Template.new(:name => 'rubix_spec_template_2', :host_groups => [@host_group]))
-    @template_item_1 = ensure_save(Rubix::Item.new(:key => 'rubix.spec1', :description => 'rubix template item description 1', :host_id => @template_1.id, :value_type => :character))
-    @template_item_2 = ensure_save(Rubix::Item.new(:key => 'rubix.spec2', :description => 'rubix template item description 2', :host_id => @template_2.id, :value_type => :character))
+    @template_item_1 = ensure_save(Rubix::Item.new(:key => 'rubix.spec1', :name => 'rubix template item description 1', :host_id => @template_1.id, :value_type => :character))
+    @template_item_2 = ensure_save(Rubix::Item.new(:key => 'rubix.spec2', :name => 'rubix template item description 2', :host_id => @template_2.id, :value_type => :character))
     
-    @host_1          = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group], :ip => '123.123.123.123'))
-    @host_2          = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_2', :host_groups => [@host_group], :ip => '123.123.123.124'))
-    @host_item_1     = ensure_save(Rubix::Item.new(:key => 'rubix.spec1', :description => 'rubix host item description 1', :host_id => @host_1.id, :value_type => :character))
-    @host_item_2     = ensure_save(Rubix::Item.new(:key => 'rubix.spec2', :description => 'rubix host item description 2', :host_id => @host_2.id, :value_type => :character))
+    @host_1          = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_1', :host_groups => [@host_group], :interfaces => ['ip' => '123.123.123.123', 'main' => 1]))
+    @host_1          = Rubix::Host.find(:id => @host_1.id) # reload for interfaces
+    @host_2          = ensure_save(Rubix::Host.new(:name => 'rubix_spec_host_2', :host_groups => [@host_group], :interfaces => ['ip' => '123.123.123.123', 'main' => 1]))
+    @host_2          = Rubix::Host.find(:id => @host_2.id) # reload for interfaces
+    @host_item_1     = ensure_save(Rubix::Item.new(:key => 'rubix.spec1', :name => 'rubix host item description 1', :host_id => @host_1.id, :interface_id => @host_1.interfaces.first.id, :value_type => :character))
+    @host_item_2     = ensure_save(Rubix::Item.new(:key => 'rubix.spec2', :name => 'rubix host item description 2', :host_id => @host_2.id, :interface_id => @host_2.interfaces.first.id, :value_type => :character))
   end
 
   after do

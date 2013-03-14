@@ -4,6 +4,7 @@ describe "Users" do
 
   before do
     integration_test
+    @user_group = ensure_save(Rubix::UserGroup.new(:name => 'rubix_spec_user_group_1'))
   end
 
   after do
@@ -17,7 +18,7 @@ describe "Users" do
     end
 
     it "can be created" do
-      hg = Rubix::User.new(:username => 'rubix_spec_user_1', :first_name => 'rubix1', :last_name => 'user1', :password => 'pass1')
+      hg = Rubix::User.new(:username => 'rubix_spec_user_1', :first_name => 'rubix1', :last_name => 'user1', :password => 'pass1', :user_groups => [@user_group])
       hg.save.should be_true
     end
     
@@ -26,7 +27,7 @@ describe "Users" do
   describe "when existing" do
 
     before do
-      @u = ensure_save(Rubix::User.new(:username => 'rubix_spec_user_1', :first_name => 'rubix1', :last_name => 'user1', :password => 'pass1'))
+      @u = ensure_save(Rubix::User.new(:username => 'rubix_spec_user_1', :first_name => 'rubix1', :last_name => 'user1', :password => 'pass1', :user_groups => [@user_group]))
     end
     
     it "can be found" do
@@ -75,7 +76,7 @@ describe "Users" do
     end
 
     it "can add media to a user when creating" do
-      Rubix::User.new(:username => 'rubix_spec_user_1', :first_name => 'rubix1', :last_name => 'user1', :password => 'pass1', :media => @media_params).save.should be_true
+      Rubix::User.new(:username => 'rubix_spec_user_1', :first_name => 'rubix1', :last_name => 'user1', :password => 'pass1', :media => @media_params, :user_groups => [@user_group]).save.should be_true
       # FIXME no facility to fetch media!!
     end
 

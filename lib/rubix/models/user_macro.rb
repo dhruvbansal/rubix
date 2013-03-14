@@ -53,20 +53,8 @@ module Rubix
     # == Requests ==
     #
 
-    def mass_add_params
-      { :macros => [{:macro => macro_name, :value => value}], :hosts => [{:hostid => host_id}] }
-    end
-    
-    def create_request
-      request('usermacro.massAdd', mass_add_params)
-    end
-    
-    def update_request
-      request('usermacro.massUpdate', mass_add_params)
-    end
-
-    def destroy_request
-      request('usermacro.massRemove', :hostids => [host_id], :macros => [macro_name])
+    def create_params
+      {:macro => macro_name, :value => value, :hostid => host_id}
     end
 
     def self.find_params options={}

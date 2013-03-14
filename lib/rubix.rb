@@ -7,6 +7,8 @@ require 'rubix/monitors'
 
 module Rubix
 
+  SERVER_VERSIONS = ['2.0.4', '2.0.5'].freeze
+
   autoload :Connection,     'rubix/connection'
   autoload :Response,       'rubix/response'
   autoload :Sender,         'rubix/sender'
@@ -77,7 +79,7 @@ module Rubix
       File.read(File.expand_path('../../VERSION', __FILE__)).chomp
     rescue => e
       'unknown'
-    end    
+    end
   end
 
   # Base class for Rubix errors.
@@ -99,5 +101,8 @@ module Rubix
 
   # Given an incorrect argument.
   ArgumentError       = Class.new(Error)
-  
+
+  # Incorrect version of Zabbix server
+  VersionError        = Class.new(Error)
+
 end

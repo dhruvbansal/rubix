@@ -36,17 +36,15 @@ describe "UserGroups" do
     it "can have its name and settings changed" do
       @ug.name       = 'rubix_spec_user_group_2'
       @ug.banned     = true
-      @ug.api_access = true
+      @ug.api_access = :disabled
       @ug.debug_mode = true
-      @ug.gui_access = :disabled
       @ug.save
       Rubix::UserGroup.find(:name => 'rubix_spec_user_group_1').should     be_nil
       nug = Rubix::UserGroup.find(:name => 'rubix_spec_user_group_2')
       nug.should_not be_nil
       nug.name.should == 'rubix_spec_user_group_2'
       nug.banned.should == true
-      nug.api_access.should == true
-      nug.gui_access.should == :disabled
+      nug.api_access.should == :disabled
       nug.debug_mode.should == true
     end
 
@@ -59,9 +57,10 @@ describe "UserGroups" do
   describe "linking users to user groups" do
 
     before do
-      @u1 = ensure_save(Rubix::User.new(:username => 'rubix_spec_user_1', :first_name => 'rubix1', :last_name => 'user1', :password => 'pass1'))
-      @u2 = ensure_save(Rubix::User.new(:username => 'rubix_spec_user_2', :first_name => 'rubix2', :last_name => 'user2', :password => 'pass2'))
-      @u3 = ensure_save(Rubix::User.new(:username => 'rubix_spec_user_3', :first_name => 'rubix3', :last_name => 'user3', :password => 'pass3'))
+      @ug = ensure_save(Rubix::UserGroup.new(:name => 'rubix_spec_user_group_1'))
+      @u1 = ensure_save(Rubix::User.new(:username => 'rubix_spec_user_1', :first_name => 'rubix1', :last_name => 'user1', :password => 'pass1', :user_groups => [@ug]))
+      @u2 = ensure_save(Rubix::User.new(:username => 'rubix_spec_user_2', :first_name => 'rubix2', :last_name => 'user2', :password => 'pass2', :user_groups => [@ug]))
+      @u3 = ensure_save(Rubix::User.new(:username => 'rubix_spec_user_3', :first_name => 'rubix3', :last_name => 'user3', :password => 'pass3', :user_groups => [@ug]))
     end
 
     it "can add users on create" do

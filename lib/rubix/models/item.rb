@@ -59,6 +59,15 @@ module Rubix
       :not_supported => 3
     }
 
+    # The numeric codes for the delta types of a Zabbix item.
+    #
+    # The default will be <tt>:as_is</tt>
+    zabbix_define :DELTA, {
+      :as_is     => 0,
+      :speed_per_second       => 1,
+      :delta => 2
+    }
+
     # Return the +value_type+ name (:float, :text, &c.) for a Zabbix
     # item's value type by examining the given +value+.
     def self.value_type_from_value value
@@ -86,12 +95,18 @@ module Rubix
     zabbix_attr :history
     zabbix_attr :trends
     zabbix_attr :status
-    zabbix_attr :frequency
+    zabbix_attr :frequency,  :required => true, :default => 60
+    zabbix_attr :name,       :required => true
+    zabbix_attr :delta,      :defalut => :as_is
+    zabbix_attr :formula
 
     def initialize properties={}
       super(properties)
       self.host            = properties[:host]
       self.host_id         = properties[:host_id]
+
+      self.interface       = properties[:interface]
+      self.interface_id    = properties[:interface_id]
 
       self.template        = properties[:template]
       self.template_id     = properties[:template_id]
@@ -109,6 +124,7 @@ module Rubix
     #
 
     include Associations::BelongsToHost
+    include Associations::BelongsToInterface
     include Associations::BelongsToTemplate
     include Associations::HasManyApplications
 
@@ -119,6 +135,8 @@ module Rubix
     def create_params
       {
         :hostid       => host_id,
+        :interfaceid  => interface_id,
+        :name         => name,
         :description  => (description || 'Unknown'),
         :type         => self.class::TYPE_CODES[type],
         :key_         => key,
@@ -128,12 +146,17 @@ module Rubix
         p[:units]        = units                 if units
         p[:data_type]    = self.class::DATA_CODES[data_type] if data_type
         p[:history]      = history.to_i if history
+        p[:delta]        = self.class::DELTA_CODES[delta] if delta
         p[:trends]       = trends.to_i if trends
         p[:status]       = self.class::STATUS_CODES[status] if status
         p[:delay]        = frequency if frequency
         if multiply_by && multiply_by.to_f != 0.0
           p[:multiplier] = 1
           p[:formula]    = multiply_by.to_f
+        end
+
+        if type == :calculated
+          p[:params] = formula
         end
       end
     end
@@ -146,7 +169,7 @@ module Rubix
       super().merge({
                       :filter => {
                         :key_ => options[:key],
-                        :id   => options[:id]
+                        :itemid   => options[:id]
                       }
                     }.tap do |o|
                       o[:hostids] = [options[:host_id]] if options[:host_id]
@@ -157,19 +180,22 @@ module Rubix
     def self.build item
       new({
             :id              => item[id_field].to_i,
+            :name            => item['name'],
             :host_id         => item['hostid'].to_i,
             :description     => item['description'],
             :type            => TYPE_NAMES[item['type'].to_i],
             :value_type      => VALUE_NAMES[item['value_type'].to_i],
             :data_type       => DATA_NAMES[item['data_type'].to_i],
             :history         => item['history'].to_i,
+            :delta           => DELTA_NAMES[item['delta'].to_i],
             :trends          => item['trends'].to_i,
             :status          => STATUS_NAMES[item['status'].to_i],
             :application_ids => (item['applications'] || []).map { |app| app['applicationid'].to_i },
             :key             => item['key_'],
             :units           => item['units'],
             :frequency       => item['delay'].to_i,
-            :multiply_by     => ((item['multiplier'].to_i == 1 && item['formula'].to_f != 0.0) ? item['formula'].to_f : nil)
+            :multiply_by     => ((item['multiplier'].to_i == 1 && item['formula'].to_f != 0.0) ? item['formula'].to_f : nil),
+            :formula         => item['params']
           })
     end
 

@@ -85,7 +85,8 @@ module Rubix
         :refresh       => refresh_period,
         :type          => self.class::TYPE_CODES[type],
         :theme         => theme,
-        :rows_per_page => rows_per_page
+        :rows_per_page => rows_per_page,
+        :usrgrps       => user_group_ids.map { |id| {'usrgrpid' => id} }
       }.tap do |cp|
         cp[:passwd] = password if password && (!password.empty?)
         
@@ -144,6 +145,10 @@ module Rubix
     def self.find_params options={}
       get_params.merge(:filter => {:alias => options[:username], id_field => options[:id]})
     end
-    
+
+    def destroy_params
+      [id_field => id]
+    end
+
   end
 end

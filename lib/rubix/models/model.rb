@@ -86,6 +86,18 @@ module Rubix
       self.class.request(method, params)
     end
 
+    # Return Zabbix API version
+    # @return [String]
+    def api_version
+      self.class.api_version
+    end
+
+    # Return Zabbix API version
+    # @return [String]
+    def self.api_version
+      Rubix.connection && Rubix.connection.api_version
+    end
+
     # Send a request to the Zabbix API.  This is just a convenience
     # method for <tt>Rubix::Connection#request</tt>.
     #
@@ -122,6 +134,11 @@ module Rubix
       new_record? ? create : update
     end
 
+    def save!
+      raise Rubix::Error.new(Rubix.connection.last_response.body + "\n" +
+                            Rubix.connection.last_request.inspect) unless save
+    end
+
     # Validate this record.
     #
     # Override this method in a subclass and have it raise a
@@ -130,7 +147,14 @@ module Rubix
     # @return [true, false]
     def validate
       self.class.properties.each_pair do |property, options|
-        raise ValidationError.new("A #{self.class.resource_name} must have a #{property}") if options[:required] && (self.send(property).nil? || self.send(property).empty?)
+        property_value = self.send property
+        if options[:required]
+          if property_value.nil?
+            raise ValidationError.new("A #{self.class.resource_name} #{property} can't be nil")
+          elsif property_value.is_a?(Array) && property_value.empty?
+            raise ValidationError.new("A #{self.class.resource_name} must have a #{property}")
+          end
+        end
       end
       true
     end
@@ -261,7 +285,8 @@ module Rubix
       return false unless before_destroy
       response = destroy_request
       case
-      when response.has_data? && response.result.values.first.first.to_i == id
+      # Zabbix 2.0.4 returns "result":{"itemids":{"22":22}} on item.delete
+      when response.has_data? && (((tmp = response.result.values.first.first).is_a?(Array) && tmp.first.to_i == id ) || response.result.values.first.first.to_i == id)
         info("Destroyed Zabbix #{resource_name}")
         true
       when response.zabbix_error? && response.error_message =~ /does not exist/i

@@ -15,9 +15,6 @@ module Rubix
           c.kind_of?(Condition) ? c : Condition.new(c)
         end
       end
-      
     end
   end
 end
-
-      

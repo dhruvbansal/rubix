@@ -16,7 +16,7 @@ module Rubix
         return
       end
       unless connect_to_database
-        puts "Could not connect to a MySQL database using: #{$RUBIX_MYSQL_CREDENTIALS.inspect}.  Integration tests will be skipped."
+        puts "Could not connect to a database using: #{$CONFIG['postgresql'].inspect}.  Integration tests will be skipped."
         return
       end
       unless truncate_all_tables
@@ -28,68 +28,39 @@ module Rubix
         return
       end
       unless connect_to_api
-        puts "Could not connect to Zabbix API using: #{$RUBIX_API_CREDENTIALS.inspect}.  Integration tests will be skipped."
+        puts "Could not connect to Zabbix API using: #{$CONFIG['api']}.  Integration tests will be skipped."
         return
       end
       $RUBIX_INTEGRATION = true
     end
-      
+
     def self.parse_integration_settings test_yml_path
       return unless File.exist?(test_yml_path)
-      
+
       require 'yaml'
       test_data = YAML.load(open(test_yml_path))
       return if test_data['disable_integration_tests']
-      
-      $RUBIX_API_CREDENTIALS   = test_data['api']
-      $RUBIX_MYSQL_CREDENTIALS = test_data['mysql']
+
+      $CONFIG = test_data
     end
 
     def self.connect_to_database
-      begin
-        require 'mysql2'
-        $RUBIX_MYSQL = Mysql2::Client.new(:host => $RUBIX_MYSQL_CREDENTIALS['host'], :username => $RUBIX_MYSQL_CREDENTIALS['username'], :password => $RUBIX_MYSQL_CREDENTIALS['password'], :database => $RUBIX_MYSQL_CREDENTIALS['database'])
-      rescue => e
-        puts "Could not connect to MySQL database: #{e.class} -- #{e.message}"
-        puts e.backtrace
-        false
-      end
+      $CONN = DatabaseHelper.new $CONFIG
+      $CONN.result
     end
-    
+
     def self.truncate_all_tables
-      return unless $RUBIX_MYSQL
-      begin
-        %w[actions graphs triggers items applications hosts].each do |table|
-          $RUBIX_MYSQL.query("DELETE FROM #{table}")
-        end
-        $RUBIX_MYSQL.query('DELETE FROM groups WHERE `internal` != 1')
-        $RUBIX_MYSQL.query('DELETE FROM users  WHERE `alias`    != "Admin" AND `alias` != "guest"')
-        true
-      rescue => e
-        puts "Could not truncate tables in MySQL: #{e.class} -- #{e.message}"
-        puts e.backtrace
-        false
-      end
+      $CONN.truncate_all_tables
     end
 
     def self.create_integration_test_user_and_group
-      return unless $RUBIX_MYSQL
-      begin
-        $RUBIX_MYSQL.query(%Q{INSERT INTO users        (`alias`, `name`, surname, passwd, type) VALUES ("#{INTEGRATION_USER}", "Rubix", "Spec User", "#{Digest::MD5.hexdigest('rubix')}", 3)})
-        # $RUBIX_MYSQL.query(%Q{INSERT INTO usrgrp       (`name`, api_access)                     VALUES ("#{INTEGRATION_GROUP}", 1)})
-        $RUBIX_MYSQL.query(%Q{INSERT INTO users_groups (usrgrpid, userid)                       SELECT users.userid, usrgrp.usrgrpid FROM users, usrgrp WHERE users.alias = '#{INTEGRATION_USER}' AND usrgrp.name = '#{INTEGRATION_GROUP}'})
-        true
-      rescue => e
-        puts "Could not create integration user or group: #{e.class} -- #{e.message}"
-        puts e.backtrace
-        false
-      end
+      $CONN.create_integration_test_user_and_group(INTEGRATION_USER, INTEGRATION_GROUP, INTEGRATION_PASSWORD)
     end
 
     def self.connect_to_api
-      return unless $RUBIX_API_CREDENTIALS
+      return unless $CONFIG['api']
       begin
-        $RUBIX_API = Rubix::Connection.new($RUBIX_API_CREDENTIALS['url'], INTEGRATION_USER, INTEGRATION_PASSWORD)
+        $RUBIX_API = Rubix::Connection.new($CONFIG['api'], INTEGRATION_USER, INTEGRATION_PASSWORD)
         $RUBIX_API.authorize!
         Rubix.connection = $RUBIX_API
       rescue => e
@@ -101,7 +72,7 @@ module Rubix
 
     def integration_test
       if $RUBIX_INTEGRATION
-        raise Rubix::Error.new("Could not truncate tables in MySQL.")         unless IntegrationHelper.truncate_all_tables
+        raise Rubix::Error.new("Could not truncate tables.")         unless IntegrationHelper.truncate_all_tables
         raise Rubix::Error.new("Could not create integration user or group.") unless IntegrationHelper.create_integration_test_user_and_group
         raise Rubix::Error.new("Could not connect to Zabbixi API.")           unless IntegrationHelper.connect_to_api
       else
@@ -146,14 +117,9 @@ module Rubix
         raise e
       end
     end
-    
+
     def create_history item
-      raise Rubix::Error.new("Not connected to MySQL") unless $RUBIX_MYSQL
-      (1..10).to_a.collect do |i|
-        history = { "itemid" => item.id.to_s, "clock" => (Time.now.to_i - 5*i).to_s, "value" => rand(100).to_s }
-        $RUBIX_MYSQL.query("INSERT INTO history_uint (#{history.keys.join(', ')}) VALUES (#{history.values.join(', ')})")
-        history
-      end
+      $CONN.create_history item
     end
 
     def truncate_all_tables

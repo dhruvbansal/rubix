@@ -27,7 +27,6 @@ describe "Templates" do
       Rubix::Template.import(File.new(data_path('test_template.xml')))
       Rubix::Template.find(:name => 'test').should_not be_nil
     end
-    
   end
 
   describe "when existing" do
@@ -47,7 +46,6 @@ describe "Templates" do
       @template.destroy
       Rubix::Template.find(:name => 'rubix_spec_template_1').should be_nil
     end
-    
   end
 
 end

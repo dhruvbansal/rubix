@@ -1,6 +1,6 @@
 module Rubix
   module Associations
-    
+
     autoload :HasManyHosts,         'rubix/associations/has_many_hosts'
     autoload :HasManyTemplates,     'rubix/associations/has_many_templates'
     autoload :HasManyHostGroups,    'rubix/associations/has_many_host_groups'
@@ -11,8 +11,11 @@ module Rubix
     autoload :HasManyUserGroups,    'rubix/associations/has_many_user_groups'
     autoload :HasManyConditions,    'rubix/associations/has_many_conditions'
     autoload :HasManyInterfaces,    'rubix/associations/has_many_interfaces'
+    autoload :HasManyScreenItems,   'rubix/associations/has_many_screen_items'
+    autoload :HasManyGraphItems,    'rubix/associations/has_many_graph_items'
     autoload :HasInventory,         'rubix/associations/has_inventory'
-    
+    autoload :HasMessage,           'rubix/associations/has_message'
+
     autoload :BelongsToHost,        'rubix/associations/belongs_to_host'
     autoload :BelongsToTemplate,    'rubix/associations/belongs_to_template'
     autoload :BelongsToItem,        'rubix/associations/belongs_to_item'
@@ -20,6 +23,7 @@ module Rubix
     autoload :BelongsToUser,        'rubix/associations/belongs_to_user'
     autoload :BelongsToUserGroup,   'rubix/associations/belongs_to_user_group'
     autoload :BelongsToMediaType,   'rubix/associations/belongs_to_media_type'
+    autoload :BelongsToInterface,   'rubix/associations/belongs_to_interface'
   end
 end
 
