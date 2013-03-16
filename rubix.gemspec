@@ -16,7 +16,7 @@ Gem::Specification.new do |gem|
   gem.description  =  "Rubix provides abstractions for connecting to Zabbix's API, an ORM for wrapping Zabbix resources, a set of scripts for writing data to Zabbix, and a collection of Monitor classes for building periodic monitors."
 
   gem.files        = Dir["{bin,lib,spec}/**/*"] + %w[LICENSE.md README.rdoc VERSION CHANGELOG.md Rakefile Gemfile]
-  gem.executables  = ['zabbix_api', 'zabbix_pipe']
+  gem.executables  = ['zabbix_api']
   gem.require_path = 'lib'
 
   gem.add_dependency 'multi_json'

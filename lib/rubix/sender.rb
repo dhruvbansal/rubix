@@ -1,51 +1,26 @@
 require 'rubix/log'
-require 'open3'
+require 'socket'
+require 'multi_json'
 
 module Rubix
 
   # A class used to send data to Zabbix.
   #
-  # This sender is used to wrap +zabbix_sender+.
+  # It acts as a pure-Ruby implementation of the +zabbix_sender+
+  # utility.
+  #
+  # The following links provide details on the protocol used by Zabbix
+  # to receive data:
+  #
+  # * https://www.zabbix.com/forum/showthread.php?t=20047&highlight=sender
+  # * https://gist.github.com/1170577
+  # * http://spin.atomicobject.com/2012/10/30/collecting-metrics-from-ruby-processes-using-zabbix-trappers/?utm_source=rubyflow&utm_medium=ao&utm_campaign=collecting-metrics-zabix
   class Sender
 
     include Logs
 
     #
-    # == Properties ==
-    #
-
-    # @return [String] The IP of the Zabbix server
-    attr_writer :server
-    def server
-      @server ||= 'localhost'
-    end
-
-    # @return [String, Rubix::Hosts] the Zabbix host name or Rubix::Host the sender will use by default
-    attr_reader :host
-    def host= nh
-      @host = (nh.respond_to?(:name) ? nh.name : nh.to_s)
-    end
-
-    # @return [Fixnum] the port to connect to on the Zabbix server
-    attr_writer :port
-    def port
-      @port ||= 10051
-    end
-
-    # @return [String] the path to the local Zabbix agent configuration file.
-    attr_writer :config
-    def config
-      @config ||= '/etc/zabbix/zabbix_agentd.conf'
-    end
-
-    # Whether or not to include timestamps with the data.
-    attr_writer :timestamps
-    def timestamps?
-      @timestamps
-    end
-
-    #
-    # == Initialization ==
+    # == Properties & Initialization ==
     #
 
     # Create a new sender with the given +settings+.
@@ -54,78 +29,133 @@ module Rubix
     # @param settings [String, Rubix::Host] host the name of the Zabbix host to write data for
     # @param settings [String] server the IP of the Zabbix server
     # @param settings [Fixnum] port the port to connect to on the Zabbix server
-    # @param settings [String] config the path to the local configuration file
     def initialize settings={}
       @settings = settings
       self.server     = settings[:server] if settings[:server]
       self.host       = settings[:host]   if settings[:host]
       self.port       = settings[:port]   if settings[:port]
-      self.config     = settings[:config] if settings[:config]
-      self.timestamps = settings[:timestamps]
-      confirm_settings
     end
 
-    # Check that all settings are correct in order to be able to
-    # successfully write data to Zabbix.
-    def confirm_settings
-      raise Error.new("Must specify a path to a local configuraiton file")    unless config
-      raise Error.new("Must specify the IP of a Zabbix server")               unless server
-      raise Error.new("Must specify the port of a Zabbix server")             unless port && port.to_i > 0
-      raise Error.new("Must specify a default Zabbix host to write data for") unless host
+    # The hostname of the Zabbix server to connect to.  Defaults to
+    # +localhost+.
+    #
+    # @return [String]
+    def server ; @server ||= 'localhost' ; end
+    
+    # Set the hostname of the Zabbix server to connect to.
+    #
+    # @param [String] hostname
+    def server= hostname ; @server = hostname ; end
+
+    # The port of the Zabbix server to connect to.  Defaults to 10051.
+    #
+    # @return [Integer]
+    def port ; @port ||= 10051 ; end
+    
+    # Set the port of the Zabbix server to connect to.
+    #
+    # @param [Integer] num
+    def port= num ; @port = num ; end
+
+    # The name of the default Zabbix host that measurements will be
+    # associated with if not provided.  Defaults to +localhost+.
+    #
+    # @return [String]
+    def host
+      @host ||= 'localhost'
+    end
+    
+    # Set the name of the default Zabbix host associated with
+    # measurements.
+    #
+    # @param [String, Rubix::Host] hostname
+    def host= hostname
+      @host = (hostname.respond_to?(:name) ? hostname.name : hostname.to_s)
     end
     
     #
     # == Sending Data == 
     #
 
-    # The environment for the Zabbix sender invocation.
+    attr_accessor :socket
+
+    # Send measurements to a Zabbix server.
     #
+    # Each measurement passed should be a Hash with the following keys:
+    #
+    # * +host+ the host that was measured (will default to the host for this sender)
+    # * +key+ the key of the item that was measured
+    # * +value+ the value that was measured for the item
+    #
+    # and optionally:
+    #
+    # * +time+ the UNIX timestamp at time of measurement
+    #
+    # The Zabbix server must already have a monitored host with the
+    # given item set to be a "Zabbix trapper" type.
+    #
+    # As per the documentation for the [Zabbix sender
+    # protocol](https://www.zabbix.com/wiki/doc/tech/proto/zabbixsenderprotocol),
+    # a new TCP connection will be created for each batch of
+    # measurements.
+    #
+    # @param [Hash, Array<Hash>] measurements
+    def transmit measurements=[]
+      self.socket = TCPSocket.new(host, port)
+      send_request([measurements].flatten)
+      handle_response
+      self.socket.close
+    end
+    alias_method :<< , :transmit
+
+    # Format a given measurement for Zabbix.
+    #
+    # Will add the default +host+ of this Sender if not set.
+    #
+    # @param [Hash] measurement
     # @return [Hash]
-    def zabbix_sender_env
-      {}
+    def format_measurement measurement
+      {:host => host}.merge(measurement)
+    end
+    
+    private
+    
+    # :nodoc
+    def send_request measurements=[]
+      socket.write(payload(measurements))
     end
 
-    # Construct the command that invokes Zabbix sender.
-    #
-    # @return [String]
-    def zabbix_sender_command
-      "timeout 3 zabbix_sender --zabbix-server #{server} --host #{host} --port #{port} --config #{config} --real-time --input-file - -vv".tap do |c|
-        c += " --with-timestamps" if timestamps?
+    # :nodoc
+    def handle_response
+      header = socket.recv(5)
+      if header == "ZBXD\1"
+        data_header = socket.recv(8)
+        length      = data_header[0,4].unpack("i")[0]
+        response    = MultiJson.load(socket.recv(length))
+        info(response["info"])
+      else
+        warn("Invalid response: #{header}")
       end
     end
 
-    # Run a +zabbix_sender+ subprocess in the block.
-    #
-    # @yield [IO, IO, IO, Thread] Handle the subprocess.
-    def with_sender_subprocess &block
-      begin
-        Open3.popen3(zabbix_sender_env, zabbix_sender_command, &block)
-      rescue Errno::ENOENT, Errno::EACCES => e
-        warn(e.message)
-      end
+    # :nodoc
+    def payload measurements=[]
+      body = body_for(host, measurements)
+      header_for(body) + body
     end
 
-    # Convenience method for sending a block of text to
-    # +zabbix_sender+.
-    #
-    # @param [String] text
-    def puts text
-      with_sender_subprocess do |stdin, stdout, stderr, wait_thr|
-        stdin.write(text)
-        stdin.close
-        output = [stdout.read.chomp, stderr.read.chomp].join("\n").strip
-        debug(output) if output.size > 0
-      end
+    # :nodoc
+    def body_for host, measurements=[]
+      MultiJson.dump({
+        request: "sender data",
+        data: measurements.map { |measurement| format_measurement(measurement) }
+      })
     end
 
-    # :nodoc:
-    def close
-      return
-    end
-
-    # :nodoc:
-    def flush
-      return
+    # :nodoc
+    def header_for body
+      length = body.bytesize
+      "ZBXD\1".encode("ascii") + [length].pack("i") + "\x00\x00\x00\x00"
     end
     
   end

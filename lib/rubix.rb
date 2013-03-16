@@ -3,7 +3,6 @@ require 'rubygems'
 require 'rubix/log'
 require 'rubix/models'
 require 'rubix/associations'
-require 'rubix/monitors'
 
 module Rubix
 

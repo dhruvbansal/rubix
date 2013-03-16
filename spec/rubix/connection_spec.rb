@@ -2,75 +2,77 @@ require 'spec_helper'
 
 describe Rubix::Connection do
 
-  before do
-    
-    @mock_server   = mock("Net::HTTP instance")
-    Net::HTTP.stub!(:new).and_return(@mock_server)
-    
-    @mock_response = mock("Net::HTTP::Response instance")
-    @mock_server.stub!(:request).and_return(@mock_response)
-    @mock_response.stub!(:code).and_return('200')
-    
+  let(:server)                 { double("Net::HTTP instance") }
+  let(:server_api_version)     { '1.4'                        }
 
-    @good_auth_response = '{"result": "auth_token"}'
-    @blah_response      = '{"result": "bar"}'
-
-    @mock_response.stub!(:body).and_return(@blah_response)
-    
-    @connection = Rubix::Connection.new('localhost/api.php', 'username', 'password')
-    @connection.stub!(:api_version).and_return(Rubix::SERVER_VERSION)
-  end
-
-  describe "sending API requests" do
-
-    it "should attempt to authorize itself without being asked" do
-      @connection.should_receive(:authorize!)
-      @connection.request('foobar', {})
-    end
-
-    it "should not repeatedly authorize itself" do
-      @mock_response.stub!(:body).and_return(@good_auth_response, @blah_response, @blah_response)
-      @connection.request('foobar', {})
-      @connection.should_not_receive(:authorize!)
-      @connection.request('foobar', {})
-    end
-
-    it "should increment its request ID" do
-      @mock_response.stub!(:body).and_return(@good_auth_response, @blah_response, @blah_response)
-      @connection.request('foobar', {})
-      @connection.request('foobar', {})
-      @connection.request_id.should == 3 # it's the number used for the *next* request
-    end
-
-    it "should refresh its authorization credentials if they are deleted automatically" do
-      @mock_response.stub!(:body).and_return('{"jsonrpc":"2.0","error":{"code":-32602,"message":"Invalid params.","data":"Not authorized"},"id":4}')
-      @connection.should_receive(:authorize!)
-      @connection.request('foobar', {})
-    end
-
-  end
-
-  describe "sending web requests" do
-
-    it "should attempt to authorize itself without being asked" do
-      @connection.should_receive(:authorize!)
-      @connection.web_request("GET", "/")
-    end
-
-    it "should not repeatedly authorize itself" do
-      @mock_response.stub!(:body).and_return(@good_auth_response, @blah_response, @blah_response)
-      @connection.web_request("GET", "/")
-      @connection.should_not_receive(:authorize!)
-      @connection.web_request("GET", "/")
-    end
-
-    it "should NOT increment its request ID" do
-      @mock_response.stub!(:body).and_return(@good_auth_response, @blah_response, @blah_response)
-      @connection.web_request("GET", "/")
-      @connection.web_request("GET", "/")
-      @connection.request_id.should == 1
-    end
-
-  end
+  let(:generic_response)       { double("Net::HTTP::Response instance", code: 200, body: '{"result": "foo"}')        }
   
+  let(:auth_success_response)  { double("Net::HTTP::Response instance", code: 200, body: '{"result": "auth_token"}') }
+  let(:auth_failure_response)  { double("Net::HTTP::Response instance", code: 200, body: '{"error":{"code":-32602,"message":"Invalid params.","data":"Not authorized"}}') }
+  
+  let(:supported_version_response)   { double("Net::HTTP::Response instance", code: 200, body: '{"result": "1.4"}') }
+  let(:unsupported_version_response) { double("Net::HTTP::Response instance", code: 200, body: '{"result": "1.3"}') }
+
+  let(:connection) { Rubix::Connection.new('localhost/api.php', 'username', 'password') }
+  subject { connection }
+  before do
+    Net::HTTP.stub!(:new).and_return(server)
+  end
+
+  context "before making any requests" do
+    its(:request_id) { should == 0 }
+    it "sends an authorization request" do
+      server.should_receive(:request).and_return(auth_success_response)
+      connection.should_receive(:authorize!)
+      connection.request('foobar', {})
+    end
+    context "having received a failed authorization response" do
+      before { server.should_receive(:request).and_return(auth_failure_response) }
+      it "throws an AuthenticationError" do
+        expect { connection.request('foobar', {}) }.to raise_error(Rubix::AuthenticationError)
+      end
+    end
+    context "having received a successful authorization response" do
+      before { server.should_receive(:request).and_return(auth_success_response) }
+      it "sends a version check request" do
+        server.should_receive(:request).and_return(supported_version_response, generic_response)
+        connection.request('foobar', {})
+      end
+      context "having rejected the server API version" do
+        before { server.should_receive(:request).and_return(unsupported_version_response) }
+        it "throws a VersionError" do
+          expect { connection.request('foobar', {}) }.to raise_error(Rubix::VersionError)
+        end
+      end
+      context "having verified it supports the server API version" do
+        before { server.should_receive(:request).and_return(supported_version_response) }
+        it "sends the actual request" do
+          server.should_receive(:request).and_return(generic_response)
+          connection.request('foobar', {})
+        end
+      end
+    end
+  end
+
+  context "on subsequent requests" do
+    before do
+      server.should_receive(:request).and_return(auth_success_response, supported_version_response, generic_response)
+      connection.request('foobar', {})
+    end
+    its(:request_id) { should == 3 }
+    it "should not send any authentication or version check requests" do
+      server.should_receive(:request).and_return(generic_response)
+      connection.should_not_receive(:authorize!)
+      connection.should_not_receive(:check_version!)
+      connection.request('foobar', {})
+    end
+    context "upon receiving a 'Not authorized' response" do
+      before { server.should_receive(:request).and_return(auth_failure_response) }
+      it "authorizes again and repeats the request" do
+        server.should_receive(:request).and_return(auth_success_response, generic_response)
+        connection.request('foobar', {})
+      end
+    end
+  end
 end
+

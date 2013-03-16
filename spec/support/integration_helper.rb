@@ -7,6 +7,18 @@ module Rubix
     INTEGRATION_GROUP    = 'rubix_spec_group'
     INTEGRATION_PASSWORD = 'rubix'
 
+    def self.integration_config
+      @integration_config
+    end
+    def self.integration_config= config
+      @integration_config = config
+    end
+    
+      return @integration_config if @integration_config
+      
+      
+      
+
     # Parse the information we need to find the database and Zabbix
     # server we're going to need for any integration tests.  Also set
     # a global variable for easy use of this information when testing.
@@ -36,12 +48,10 @@ module Rubix
 
     def self.parse_integration_settings test_yml_path
       return unless File.exist?(test_yml_path)
-
       require 'yaml'
       test_data = YAML.load(open(test_yml_path))
       return if test_data['disable_integration_tests']
-
-      $CONFIG = test_data
+      self.integration_config = test_data
     end
 
     def self.connect_to_database

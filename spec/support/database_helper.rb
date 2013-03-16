@@ -1,26 +1,26 @@
 module Rubix
   class DatabaseHelper
 
+    include Logs
+
     attr_accessor :result
 
     def initialize config
-      begin
-        if config['postgresql']
-          require 'pg'
-          @conn = PG::Connection.new(:host => config['postgresql']['host'], :user => config['postgresql']['username'],
-                                     :password => config['postgresql']['password'], :dbname => config['postgresql']['database'],
-                                     :port => config['postgresql']['port'])
-        elsif config['mysql']
-          require 'mysql2'
-          @conn = Mysql2::Client.new(:host => config['mysql']['host'], :username => config['mysql']['username'], :password => config['mysql']['password'],
-                                     :database => config['mysql']['database'])
-        end
-        @result = true
-      rescue => e
-        puts "Could not connect to database: #{e.class} -- #{e.message}"
-        puts e.backtrace
-        @result = false
+      if config['postgresql']
+        require 'pg'
+        @conn = PG::Connection.new(:host => config['postgresql']['host'], :user => config['postgresql']['username'],
+                                   :password => config['postgresql']['password'], :dbname => config['postgresql']['database'],
+                                   :port => config['postgresql']['port'])
+      elsif config['mysql']
+        require 'mysql2'
+        @conn = Mysql2::Client.new(:host => config['mysql']['host'], :username => config['mysql']['username'], :password => config['mysql']['password'],
+                                   :database => config['mysql']['database'])
       end
+      @result = true
+    rescue => e
+      puts "Could not connect to database: #{e.class} -- #{e.message}"
+      puts e.backtrace
+      @result = false
     end
 
     def truncate_all_tables
@@ -32,6 +32,7 @@ module Rubix
         @conn.query('DELETE FROM groups WHERE internal != 1')
         @conn.query(%Q[DELETE FROM users  WHERE alias    != 'Admin' AND 'alias' != 'guest'])
         @conn.query('DELETE FROM usrgrp WHERE usrgrpid = 42')
+        debug("Truncated all tables"
         true
       rescue => e
         puts "Could not truncate tables: #{e.class} -- #{e.message}"

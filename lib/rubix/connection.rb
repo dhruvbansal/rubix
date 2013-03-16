@@ -114,9 +114,7 @@ module Rubix
       raise AuthenticationError.new("Could not authenticate with Zabbix API at #{uri}: #{response.error_message}") if response.error?
       raise AuthenticationError.new("Malformed response from Zabbix API: #{response.body}") unless response.string?
       @auth = response.result
-
-      raise VersionError.new("Zabbix server has API version <#{api_version}>.  Can only support Zabbix server API version >= 1.4}") unless supports_server_version?
-      @auth
+      check_version!
     end
 
     # Set the URI for this connection's Zabbix API server.
@@ -137,11 +135,35 @@ module Rubix
       return @server
     end
 
+    # Ensure that the version reported by the server API matches what
+    # is supported by Rubix.
+    #
+    # Rubix supports version 1.4 and above of the Zabbix API.  Zabbix
+    # API version 1.4 ships with Zabbix server version 2.0.
+    #
+    # @raise [VersionError] if the server API version is unsupported
+    def check_version!
+      raise VersionError.new("Zabbix server has API version <#{api_version}>.  Can only support Zabbix server API version >= 1.4}") unless support_server_version?
+    end
+    
+    # Return the version of the API reported by the Zabbix server
+    # we're connected to.
+    #
+    # Will make a request to the <tt>apiinfo.version</tt> method on
+    # the first call and then cache the returned version for
+    # subsequent calls.
+    #
+    # @return [String]
     def api_version
       @api_version ||= request('apiinfo.version', {}).result
     end
 
-    def supports_server_version?
+    # Do we support the server version we're connected to?
+    #
+    # This build of Rubix will support Server API 1.4 or above.
+    #
+    # @return [true, false]
+    def support_server_version?
       parts = api_version.to_s.split('.').map(&:to_i)
       parts.size >= 2 && parts[0] >= 1 && parts[1] >= 4
     end

@@ -1,6 +1,4 @@
-require 'bundler/setup' ; Bundler.require(:default, :development, :test)
 require 'rspec/autorun'
-
 require 'tempfile'
 
 RUBIX_ROOT = File.expand_path(__FILE__, '../../lib')

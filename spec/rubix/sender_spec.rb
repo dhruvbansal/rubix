@@ -2,19 +2,25 @@ require 'spec_helper'
 
 describe Rubix::Sender do
 
-  before do
-    @config_file = Tempfile.new('sender', '/tmp')
+  let(:measurement) { { key: 'question.life.universe.everything', value: 42 } }
+
+  context "has sensible defaults" do
+    its(:host)   { should == 'localhost' }
+    its(:server) { should == 'localhost' }
+    its(:port)   { should == 10051       }
   end
 
-  it "has sensible defaults" do
-    sender = Rubix::Sender.new(:host => 'foobar')
-    sender.server.should == 'localhost'
-    sender.port.should   == 10051
-    sender.config.should == '/etc/zabbix/zabbix_agentd.conf'
+  it "adds its default host to measurements" do
+    subject.format_measurement(measurement)[:host].should == subject.host
   end
 
-  it "will raise an error without a host" do
-    lambda { Rubix::Sender.new }.should raise_error(Rubix::Error)
+  it "opens and closes a socket on each write" do
+    socket = double("TCPSocket instance")
+    TCPSocket.should_receive(:new).with(subject.host, subject.port).and_return(socket)
+    socket.should_receive(:write)
+    socket.should_receive(:recv)
+    socket.should_receive(:close)
+    subject.transmit(measurement)
   end
 
 end
