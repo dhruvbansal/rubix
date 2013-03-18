@@ -20,9 +20,12 @@ end
 group :test do
   gem 'rspec'
   gem 'simplecov',   ">= 0.5",   :platform => [:ruby_19],   :require => false
-  gem 'pg'
-  gem 'mysql2'
 end
+
+# Split out database access gems because some devs only work on one or
+# the other.
+group(:mysql) { gem 'mysql2' }
+group(:pg)    { gem 'pg'     }
 
 # Gems you would use if hacking on this gem (rather than with it)
 group :support do

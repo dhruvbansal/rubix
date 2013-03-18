@@ -23,6 +23,9 @@ module Rubix
 
     def initialize properties={}
       super(properties)
+      puts "PROPS: #{self.class.properties.inspect}"
+      puts "GIVEN #{properties.inspect}"
+      puts "I BECAME : #{self.inspect}"
       self.host_id       = properties[:host_id]
       self.host          = properties[:host]
     end
@@ -46,6 +49,13 @@ module Rubix
     # == Requests ==
     #
 
+    def find_params options={}
+      super().tap do |params|
+        params[:hostids] = [options[:host_ids]].flatten if options[:host_ids]
+        params[:hostids] = [options[:hosts]].flatten.map(&:id) if options[:hosts]
+      end
+    end
+
     def create_params
       {
         :dns           => dns,
@@ -68,5 +78,6 @@ module Rubix
             :ip                  => interface['ip'],
           })
     end
+    
   end
 end

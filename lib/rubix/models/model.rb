@@ -415,9 +415,10 @@ module Rubix
     # == List ==
     #
 
-    def self.list ids
-      return [] if ids.nil? || ids.empty?
-      response = request("#{zabbix_name}.get", get_params.merge((id_field + 's') => ids))
+    def self.list ids=nil
+      list_params = get_params.dup
+      list_params[id_field + 's'] = ids unless ids.nil? || ids.empty?
+      response = request("#{zabbix_name}.get", list_params)
       case
       when response.has_data?
         response.result.map do |obj|

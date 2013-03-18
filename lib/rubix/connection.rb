@@ -144,6 +144,7 @@ module Rubix
     # @raise [VersionError] if the server API version is unsupported
     def check_version!
       raise VersionError.new("Zabbix server has API version <#{api_version}>.  Can only support Zabbix server API version >= 1.4}") unless support_server_version?
+      true
     end
     
     # Return the version of the API reported by the Zabbix server
@@ -164,8 +165,7 @@ module Rubix
     #
     # @return [true, false]
     def support_server_version?
-      parts = api_version.to_s.split('.').map(&:to_i)
-      parts.size >= 2 && parts[0] >= 1 && parts[1] >= 4
+      Gem::Version.new(api_version) > Gem::Version.new('1.4.0')
     end
 
     protected

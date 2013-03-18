@@ -70,7 +70,7 @@ module Rubix
     when ENV["RUBIX_LOG_PATH"]
       ENV["RUBIX_LOG_PATH"]
     else
-      $stdout
+      $stderr
     end
   end
 

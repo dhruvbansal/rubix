@@ -2,12 +2,14 @@ require 'spec_helper'
 
 describe Rubix::Sender do
 
+  subject { Rubix::Sender.new }
+  
   let(:measurement) { { key: 'question.life.universe.everything', value: 42 } }
 
   context "has sensible defaults" do
-    its(:host)   { should == 'localhost' }
-    its(:server) { should == 'localhost' }
-    its(:port)   { should == 10051       }
+    its(:host)   { should == Rubix::Sender::DEFAULT_HOST }
+    its(:server) { should == 'localhost'     }
+    its(:port)   { should == 10051           }
   end
 
   it "adds its default host to measurements" do

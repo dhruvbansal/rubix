@@ -32,7 +32,7 @@ module Rubix
         @conn.query('DELETE FROM groups WHERE internal != 1')
         @conn.query(%Q[DELETE FROM users  WHERE alias    != 'Admin' AND 'alias' != 'guest'])
         @conn.query('DELETE FROM usrgrp WHERE usrgrpid = 42')
-        debug("Truncated all tables"
+        debug("Truncated all tables")
         true
       rescue => e
         puts "Could not truncate tables: #{e.class} -- #{e.message}"
