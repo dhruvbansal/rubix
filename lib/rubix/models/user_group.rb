@@ -78,6 +78,13 @@ module Rubix
     end
 
     def self.build user_group
+  
+      if user_group.has_key? 'users'
+        user_ids = user_group['users'].map { |user_info| user_info['userid'].to_i }
+      else
+        user_ids = []
+      end
+  
       new({
             :id         => user_group[id_field].to_i,
             :name       => user_group['name'],
@@ -85,9 +92,9 @@ module Rubix
             :banned     => (user_group['users_status'].to_i == 1),
             :api_access => (user_group['api_access'].to_i == 1),
             :debug_mode => (user_group['debug_mode'].to_i == 1),
-            :user_ids   => user_group['users'].map { |user_info| user_info['userid'].to_i }
+            :user_ids   => user_ids
           })
     end
-    
+
   end
 end
