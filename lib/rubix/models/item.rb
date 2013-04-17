@@ -86,6 +86,7 @@ module Rubix
     zabbix_attr :history
     zabbix_attr :trends
     zabbix_attr :status
+    zabbix_attr :formula
     zabbix_attr :frequency
 
     def initialize properties={}
@@ -131,7 +132,8 @@ module Rubix
         p[:trends]       = trends.to_i if trends
         p[:status]       = self.class::STATUS_CODES[status] if status
         p[:delay]        = frequency if frequency
-        if multiply_by && multiply_by.to_f != 0.0
+        p[:params]       = formula if formula && self.class::TYPE_CODES[type] == :calculated
+        if multiply_by && multiply_by.to_f != 0.0 && formula.nil?
           p[:multiplier] = 1
           p[:formula]    = multiply_by.to_f
         end
