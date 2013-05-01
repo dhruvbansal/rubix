@@ -132,7 +132,7 @@ module Rubix
         p[:trends]       = trends.to_i if trends
         p[:status]       = self.class::STATUS_CODES[status] if status
         p[:delay]        = frequency if frequency
-        p[:params]       = formula if formula && self.class::TYPE_CODES[type] == :calculated
+        p[:params]     = formula if formula && type == :calculated
         if multiply_by && multiply_by.to_f != 0.0 && formula.nil?
           p[:multiplier] = 1
           p[:formula]    = multiply_by.to_f
