@@ -47,5 +47,15 @@ module Rubix
             :host_ids => (host_group['hosts'] || []).map { |host_info| host_info['hostid'].to_i }
           })
     end
+
+    #
+    # == XML ==
+    #
+    
+    # def to_xml
+    #   xml_node("group", name)
+    # end
+    
   end
+  
 end

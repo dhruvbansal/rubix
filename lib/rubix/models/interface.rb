@@ -23,9 +23,6 @@ module Rubix
 
     def initialize properties={}
       super(properties)
-      puts "PROPS: #{self.class.properties.inspect}"
-      puts "GIVEN #{properties.inspect}"
-      puts "I BECAME : #{self.inspect}"
       self.host_id       = properties[:host_id]
       self.host          = properties[:host]
     end

@@ -25,7 +25,8 @@ module Rubix
       :ipmi       => 12,
       :ssh        => 13,
       :telnet     => 14,
-      :calculated => 15
+      :calculated => 15,
+      :jmx        => 16
     }
 
     # The numeric codes for the value types of a Zabbix item.
@@ -59,6 +60,15 @@ module Rubix
       :not_supported => 3
     }
 
+    # The numeric codes for how to store the value received
+    #
+    # The default will be <tt>:none</tt>
+    zabbix_define :DELTA, {
+      :as_is      => 0,
+      :rate       => 1,
+      :difference => 2
+    }
+    
     # Return the +value_type+ name (:float, :text, &c.) for a Zabbix
     # item's value type by examining the given +value+.
     def self.value_type_from_value value
@@ -80,6 +90,7 @@ module Rubix
     zabbix_attr :value_type, :default => :character
     zabbix_attr :data_type,  :default => :decimal
     zabbix_attr :key,        :required => true
+    zabbix_attr :store,      :default => :none
     zabbix_attr :description
     zabbix_attr :units
     zabbix_attr :multiply_by
@@ -138,12 +149,33 @@ module Rubix
         p[:trends]       = trends.to_i if trends
         p[:status]       = self.class::STATUS_CODES[status] if status
         p[:delay]        = frequency if frequency
+        p[:delta]        = self.class::DELTA_CODES[store]
         if multiply_by && multiply_by.to_f != 0.0
           p[:multiplier] = 1
           p[:formula]    = multiply_by.to_f
         end
       end
     end
+
+    # def to_xml
+    #   xml_node(:item, type: self.class::TYPE_CODES[type], key: key, value_type:  self.class::VALUE_CODES[value_type]) do |node|
+    #     node << xml_node(:description, name)
+    #     node << xml_node(:units, units) if units
+    #     node << xml_node(:data_type, self.class::DATA_CODES[data_type]) if data_type
+    #     node << xml_node(:history, history) if history
+    #     node << xml_node(:trneds, trends) if trends
+    #     node << xml_node(:status, self.class::STATUS_CODES[status]) if status
+    #     node << xml_node(:delay, frequency) if frequency
+    #     node << xml_node(:delta, self.class::DELTA_CODES[store])
+    #     if multiply_by && multiply_by.to_f != 0.0
+    #       node << xml_node(:multiplier, 1)
+    #       node << xml_node(:formula,    multiply_by.to_f)
+    #     end
+    #     unless applications.nil? || applications.empty?
+    #       node << xml_node(:applications, applications.map { |application| xml_node(:application, application.name) })
+    #     end
+    #   end
+    # end
 
     def self.get_params
       super().merge(:select_applications => :refer)
@@ -177,7 +209,8 @@ module Rubix
             :key             => item['key_'],
             :units           => item['units'],
             :frequency       => item['delay'].to_i,
-            :multiply_by     => ((item['multiplier'].to_i == 1 && item['formula'].to_f != 0.0) ? item['formula'].to_f : nil)
+            :multiply_by     => ((item['multiplier'].to_i == 1 && item['formula'].to_f != 0.0) ? item['formula'].to_f : nil),
+            :store           => DELTA_NAMES[item['delta'].to_i]
           })
     end
 

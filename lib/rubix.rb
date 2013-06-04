@@ -10,6 +10,7 @@ module Rubix
   autoload :Response,       'rubix/response'
   autoload :Sender,         'rubix/sender'
   autoload :Builder,        'rubix/builder'
+  autoload :HostBuilder,    'rubix/builders/host_builder'
 
   # Set up a <tt>Connection</tt> to a Zabbix API server.
   #
@@ -101,5 +102,5 @@ module Rubix
 
   # Incorrect version of Zabbix server
   VersionError        = Class.new(Error)
-
+  
 end

@@ -28,7 +28,7 @@ module Rubix
     end
 
     def self.macro_name name
-      "{$#{name.upcase}}"
+      "{$#{(name || '').upcase}}"
     end
 
     def macro_name

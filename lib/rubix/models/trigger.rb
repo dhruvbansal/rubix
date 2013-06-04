@@ -19,12 +19,18 @@ module Rubix
       :enabled  => 0,
       :disabled => 1
     }
+
+    zabbix_Define :TYPE, {
+      :single   => 0,
+      :multiple => 1
+    }
     
     zabbix_attr :description
     zabbix_attr :url
     zabbix_attr :status
     zabbix_attr :priority
     zabbix_attr :comments
+    zabbix_attr :type
     
     def initialize properties={}
       super(properties)
@@ -79,9 +85,11 @@ module Rubix
         :expression   => expression,
         :priority     => self.class::PRIORITY_CODES[priority],
         :status       => self.class::STATUS_CODES[status],
-        :comments     => comments,
-        :url          => url
-      }
+      }.tap do |params|
+        params[:comments] = comments if comments
+        params[:url]      = url if url
+        params[:type]     = self.class::TYPE_CODES[type] if type
+      end
     end
 
     def self.get_params
@@ -111,6 +119,7 @@ module Rubix
             :expression      => trigger['expression'],
             :comments        => trigger['comments'],
             :url             => trigger['url'],
+            :type            => TYPE_NAMES[trigger['type']],
             :status          => STATUS_NAMES[trigger['status'].to_i],
             :priority        => PRIORITY_NAMES[trigger['priority'].to_i],
             :item_ids        => (trigger['items'] || []).map { |item| item['itemid'].to_i }
@@ -128,6 +137,21 @@ module Rubix
         {}
       end
     end
+
+    #
+    # == XML ==
+    #
+    
+    # def to_xml
+    #   xml_node(:trigger) do |node|
+    #     node << xml_node(:description, description)
+    #     node << xml_node(:expression, expression)
+    #     node << xml_node(:status, self.class.STATUS_CODES[status])
+    #     node << xml_node(:priority, self.class.PRIORITY_CODES[priority])
+    #     node << xml_node(:url, url) if url
+    #     node << xml_node(:type, type) if type
+    #   end
+    # end
     
   end
 end

@@ -466,6 +466,41 @@ module Rubix
       const_set "#{defname}_CODES", codes
       const_set "#{defname}_NAMES", names
     end
+
+    #
+    # == XML ==
+    #
+
+    # def xml_node(*args, &block)
+    #   case args.size
+    #   when 0
+    #     raise Error.new("Cannot create an XML node without a name")
+    #   when 1
+    #     name       = args.shift
+    #     content    = nil
+    #     attributes = {}
+    #   when 2
+    #     name = args.shift
+    #     if args.first.is_a?(Hash)
+    #       attributes = args.shift
+    #       content    = nil
+    #     else
+    #       content = args.shift
+    #       attributes = nil
+    #     end
+    #   else
+    #     name       = args.shift
+    #     content    = args.shift
+    #     attributes = args.shift
+    #   end
+    #   Nokogiri::XML::Node.new(name, Nokogiri::XML::Document.new).tap do |node|
+    #     attributes.each_pair do |attribute, value|
+    #       node[attribute] = value
+    #     end
+    #     node << content if content
+    #     yield node if block_given?
+    #   end
+    # end
     
   end
 end

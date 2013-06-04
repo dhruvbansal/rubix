@@ -162,7 +162,7 @@ module Rubix
         data_header = socket.recv(8)
         length      = data_header[0,4].unpack("i")[0]
         response    = MultiJson.load(socket.recv(length))
-        info(response["info"])
+        debug(response["info"])
       else
         warn("Invalid response: #{header}")
       end
